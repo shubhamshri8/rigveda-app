@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic Map of Rig Veda</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            background: #000;
+            color: #fff;
+        }
+        
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        
+        #info-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 25px;
+            border-radius: 15px;
+            max-width: 350px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 165, 0, 0.3);
+            box-shadow: 0 8px 32px rgba(255, 165, 0, 0.2);
+            z-index: 10;
+        }
+        
+        #info-panel h1 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #ffa500;
+            text-shadow: 0 0 10px rgba(255, 165, 0, 0.5);
+        }
+        
+        #info-panel p {
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 10px;
+            color: #ddd;
+        }
+        
+        .mandala-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #ffcc00;
+            margin-bottom: 8px;
+        }
+        
+        .sukta-info {
+            font-size: 13px;
+            color: #aaa;
+            margin-top: 5px;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 15px 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 165, 0, 0.3);
+            z-index: 10;
+        }
+        
+        #controls p {
+            font-size: 12px;
+            margin: 5px 0;
+            color: #ccc;
+        }
+        
+        #legend {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 165, 0, 0.3);
+            max-width: 250px;
+            z-index: 10;
+        }
+        
+        #legend h3 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            color: #ffa500;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 13px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+            box-shadow: 0 0 10px currentColor;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: #ffa500;
+            text-align: center;
+            z-index: 20;
+        }
+        
+        .highlight {
+            color: #ffcc00;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    
+    <div id="info-panel">
+        <h1>🌌 Cosmic Map of Rig Veda</h1>
+        <p>Journey through the ancient wisdom of the Rig Veda Samhita, visualized as a cosmic solar system.</p>
+        <p><span class="highlight">10 Mandalas</span> orbit like planets around the central sun of knowledge.</p>
+        <p>Each planet has <span class="highlight">moons representing Suktas</span> (hymns).</p>
+        <p><strong>Click on any planet or moon</strong> to explore!</p>
+    </div>
+    
+    <div id="legend">
+        <h3>Mandala Colors</h3>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #ff6b6b;"></div>
+            <span>Mandala 1-2</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #4ecdc4;"></div>
+            <span>Mandala 3-4</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #95e1d3;"></div>
+            <span>Mandala 5-6</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #f38181;"></div>
+            <span>Mandala 7-8</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #aa96da;"></div>
+            <span>Mandala 9-10</span>
+        </div>
+    </div>
+    
+    <div id="controls">
+        <p><strong>🖱️ Controls:</strong></p>
+        <p>• Left Click + Drag: Rotate view</p>
+        <p>• Scroll: Zoom in/out</p>
+        <p>• Click objects: View details</p>
+    </div>
+    
+    <div class="loading" id="loading">Loading the Cosmic Rig Veda...</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Wrap everything in try-catch to handle errors gracefully
+        try {
+            // Rig Veda data structure - Mandala and their Sukta counts
+            const rigVedaData = [
+                { mandala: 1, suktas: 191, deity: "Agni, Indra", theme: "Invocations" },
+                { mandala: 2, suktas: 43, deity: "Agni", theme: "Gratitude" },
+                { mandala: 3, suktas: 62, deity: "Agni, Indra", theme: "Morning hymns" },
+                { mandala: 4, suktas: 58, deity: "Agni, Indra", theme: "Prayers" },
+                { mandala: 5, suktas: 87, deity: "Agni, Indra", theme: "Cosmic order" },
+                { mandala: 6, suktas: 75, deity: "Agni, Indra", theme: "Sacred fire" },
+                { mandala: 7, suktas: 104, deity: "Agni, Varuna", theme: "Waters" },
+                { mandala: 8, suktas: 103, deity: "Indra", theme: "Soma" },
+                { mandala: 9, suktas: 114, deity: "Soma Pavamana", theme: "Purification" },
+                { mandala: 10, suktas: 191, deity: "Various", theme: "Philosophy" }
+            ];
+            
+            // Color palette for mandalas
+            const mandalaColors = [
+                0xff6b6b, 0xff8787, 0x4ecdc4, 0x45b7d1,
+                0x95e1d3, 0x38ada9, 0xf38181, 0xffeaa7,
+                0xaa96da, 0xa29bfe
+            ];
+            
+            // Scene setup
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x000000, 1);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+            
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+            scene.add(ambientLight);
+            
+            const pointLight = new THREE.PointLight(0xffffff, 1.5, 1000);
+            pointLight.position.set(0, 0, 0);
+            scene.add(pointLight);
+            
+            // Create starfield
+            function createStarfield() {
+                const geometry = new THREE.BufferGeometry();
+                const vertices = [];
+                
+                for (let i = 0; i < 3000; i++) {
+                    const x = (Math.random() - 0.5) * 2000;
+                    const y = (Math.random() - 0.5) * 2000;
+                    const z = (Math.random() - 0.5) * 2000;
+                    vertices.push(x, y, z);
+                }
+                
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+                const material = new THREE.PointsMaterial({ color: 0xffffff, size: 1 });
+                const stars = new THREE.Points(geometry, material);
+                scene.add(stars);
+            }
+            createStarfield();
+            
+            // Create central sun (source of knowledge)
+            const sunGeometry = new THREE.SphereGeometry(15, 32, 32);
+            const sunMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xffa500
+            });
+            const sun = new THREE.Mesh(sunGeometry, sunMaterial);
+            scene.add(sun);
+            
+            // Sun glow
+            const glowGeometry = new THREE.SphereGeometry(18, 32, 32);
+            const glowMaterial = new THREE.MeshBasicMaterial({
+                color: 0xffa500,
+                transparent: true,
+                opacity: 0.3
+            });
+            const sunGlow = new THREE.Mesh(glowGeometry, glowMaterial);
+            scene.add(sunGlow);
+            
+            // Store all clickable objects
+            const clickableObjects = [];
+            const planets = [];
+            
+            // Create planets (Mandalas) and moons (Suktas)
+            rigVedaData.forEach((mandalaData, index) => {
+                const orbitRadius = 40 + (index * 25);
+                const planetSize = 3 + (mandalaData.suktas / 30);
+                
+                // Create planet
+                const planetGeometry = new THREE.SphereGeometry(planetSize, 32, 32);
+                const planetMaterial = new THREE.MeshPhongMaterial({ 
+                    color: mandalaColors[index],
+                    emissive: mandalaColors[index],
+                    emissiveIntensity: 0.3,
+                    shininess: 30
+                });
+                const planet = new THREE.Mesh(planetGeometry, planetMaterial);
+                
+                // Position planet
+                const angle = (index / rigVedaData.length) * Math.PI * 2;
+                planet.position.x = Math.cos(angle) * orbitRadius;
+                planet.position.z = Math.sin(angle) * orbitRadius;
+                
+                // Store data
+                planet.userData = {
+                    type: 'planet',
+                    mandala: mandalaData.mandala,
+                    suktas: mandalaData.suktas,
+                    deity: mandalaData.deity,
+                    theme: mandalaData.theme,
+                    orbitRadius: orbitRadius,
+                    orbitSpeed: 0.0005 + (index * 0.0001),
+                    angle: angle
+                };
+                
+                scene.add(planet);
+                clickableObjects.push(planet);
+                planets.push(planet);
+                
+                // Create orbit line
+                const orbitGeometry = new THREE.BufferGeometry();
+                const orbitPoints = [];
+                for (let i = 0; i <= 64; i++) {
+                    const ang = (i / 64) * Math.PI * 2;
+                    orbitPoints.push(
+                        Math.cos(ang) * orbitRadius,
+                        0,
+                        Math.sin(ang) * orbitRadius
+                    );
+                }
+                orbitGeometry.setAttribute('position', new THREE.Float32BufferAttribute(orbitPoints, 3));
+                const orbitMaterial = new THREE.LineBasicMaterial({ 
+                    color: mandalaColors[index], 
+                    transparent: true, 
+                    opacity: 0.2 
+                });
+                const orbitLine = new THREE.LineLoop(orbitGeometry, orbitMaterial);
+                scene.add(orbitLine);
+                
+                // Create moons (Suktas) - create a few representative moons
+                const moonCount = Math.min(8, Math.ceil(mandalaData.suktas / 25));
+                for (let m = 0; m < moonCount; m++) {
+                    const moonGeometry = new THREE.SphereGeometry(0.8, 16, 16);
+                    const moonMaterial = new THREE.MeshPhongMaterial({ 
+                        color: 0xcccccc,
+                        emissive: 0x444444,
+                        emissiveIntensity: 0.2
+                    });
+                    const moon = new THREE.Mesh(moonGeometry, moonMaterial);
+                    
+                    const moonOrbitRadius = planetSize + 5 + (m * 2);
+                    const moonAngle = (m / moonCount) * Math.PI * 2;
+                    
+                    moon.userData = {
+                        type: 'moon',
+                        mandala: mandalaData.mandala,
+                        suktaGroup: m + 1,
+                        totalSuktas: mandalaData.suktas,
+                        parent: planet,
+                        orbitRadius: moonOrbitRadius,
+                        orbitSpeed: 0.01 + (m * 0.005),
+                        angle: moonAngle
+                    };
+                    
+                    moon.position.x = planet.position.x + Math.cos(moonAngle) * moonOrbitRadius;
+                    moon.position.y = planet.position.y;
+                    moon.position.z = planet.position.z + Math.sin(moonAngle) * moonOrbitRadius;
+                    
+                    scene.add(moon);
+                    clickableObjects.push(moon);
+                }
+            });
+            
+            // Mouse and camera controls
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+            
+            let isDragging = false;
+            let hasDragged = false;
+            let previousMousePosition = { x: 0, y: 0 };
+            let cameraRotation = { x: 0, y: 0 };
+            let cameraDistance = 300;
+            
+            function updateCameraPosition() {
+                const x = Math.cos(cameraRotation.y) * Math.cos(cameraRotation.x) * cameraDistance;
+                const y = Math.sin(cameraRotation.x) * cameraDistance;
+                const z = Math.sin(cameraRotation.y) * Math.cos(cameraRotation.x) * cameraDistance;
+                
+                camera.position.set(x, y, z);
+                camera.lookAt(0, 0, 0);
+            }
+            
+            // Set initial camera position
+            updateCameraPosition();
+            
+            // Mouse down
+            renderer.domElement.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                hasDragged = false;
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+            
+            // Mouse move
+            renderer.domElement.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    hasDragged = true;
+                    const deltaX = e.clientX - previousMousePosition.x;
+                    const deltaY = e.clientY - previousMousePosition.y;
+                    
+                    cameraRotation.y += deltaX * 0.005;
+                    cameraRotation.x += deltaY * 0.005;
+                    
+                    cameraRotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, cameraRotation.x));
+                    
+                    previousMousePosition = { x: e.clientX, y: e.clientY };
+                    
+                    updateCameraPosition();
+                }
+            });
+            
+            // Mouse up
+            renderer.domElement.addEventListener('mouseup', () => {
+                isDragging = false;
+                setTimeout(() => { hasDragged = false; }, 100);
+            });
+            
+            // Mouse leave
+            renderer.domElement.addEventListener('mouseleave', () => {
+                isDragging = false;
+                hasDragged = false;
+            });
+            
+            // Mouse wheel for zoom
+            renderer.domElement.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                cameraDistance += e.deltaY * 0.5;
+                cameraDistance = Math.max(100, Math.min(800, cameraDistance));
+                updateCameraPosition();
+            }, { passive: false });
+            
+            // Click handler
+            function onMouseClick(event) {
+                if (hasDragged) return;
+                
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(clickableObjects);
+                
+                if (intersects.length > 0) {
+                    const obj = intersects[0].object;
+                    if (obj.userData && (obj.userData.type === 'planet' || obj.userData.type === 'moon')) {
+                        displayInfo(obj.userData);
+                    }
+                }
+            }
+            
+            window.addEventListener('click', onMouseClick);
+            
+            function displayInfo(data) {
+                const panel = document.getElementById('info-panel');
+                
+                if (data.type === 'planet') {
+                    panel.innerHTML = `
+                        <h1>🪐 Mandala ${data.mandala}</h1>
+                        <p class="mandala-name">The ${getOrdinal(data.mandala)} Book</p>
+                        <p><strong>Total Suktas (Hymns):</strong> ${data.suktas}</p>
+                        <p><strong>Primary Deities:</strong> ${data.deity}</p>
+                        <p><strong>Theme:</strong> ${data.theme}</p>
+                        <p class="sukta-info">This Mandala contains ${data.suktas} sacred hymns composed by ancient Rishis.</p>
+                    `;
+                } else if (data.type === 'moon') {
+                    const sperMoon = Math.ceil(data.totalSuktas / 8);
+                    const startSukta = (data.suktaGroup - 1) * sperMoon + 1;
+                    const endSukta = Math.min(data.suktaGroup * sperMoon, data.totalSuktas);
+                    
+                    panel.innerHTML = `
+                        <h1>🌙 Sukta Group ${data.suktaGroup}</h1>
+                        <p class="mandala-name">Mandala ${data.mandala}</p>
+                        <p><strong>Suktas:</strong> ${startSukta} - ${endSukta}</p>
+                        <p><strong>Total in Mandala:</strong> ${data.totalSuktas} hymns</p>
+                        <p class="sukta-info">These hymns represent a portion of the sacred verses from Mandala ${data.mandala}.</p>
+                        <p><em>Click the planet to learn more about this Mandala.</em></p>
+                    `;
+                }
+            }
+            
+            function getOrdinal(n) {
+                const s = ["th", "st", "nd", "rd"];
+                const v = n % 100;
+                return n + (s[(v - 20) % 10] || s[v] || s[0]);
+            }
+            
+            // Animation loop
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                // Rotate sun
+                sun.rotation.y += 0.001;
+                sunGlow.rotation.y -= 0.001;
+                
+                // Orbit planets
+                planets.forEach((planet) => {
+                    planet.userData.angle += planet.userData.orbitSpeed;
+                    planet.position.x = Math.cos(planet.userData.angle) * planet.userData.orbitRadius;
+                    planet.position.z = Math.sin(planet.userData.angle) * planet.userData.orbitRadius;
+                    planet.rotation.y += 0.005;
+                });
+                
+                // Orbit moons around their planets
+                clickableObjects.forEach((obj) => {
+                    if (obj.userData.type === 'moon') {
+                        const parent = obj.userData.parent;
+                        obj.userData.angle += obj.userData.orbitSpeed;
+                        
+                        obj.position.x = parent.position.x + Math.cos(obj.userData.angle) * obj.userData.orbitRadius;
+                        obj.position.z = parent.position.z + Math.sin(obj.userData.angle) * obj.userData.orbitRadius;
+                    }
+                });
+                
+                renderer.render(scene, camera);
+            }
+            
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+            
+            // Hide loading message
+            setTimeout(() => {
+                const loadingEl = document.getElementById('loading');
+                if (loadingEl) {
+                    loadingEl.style.display = 'none';
+                }
+            }, 1000);
+            
+            // Start animation
+            animate();
+            
+        } catch (error) {
+            console.error('Error initializing Cosmic Rig Veda:', error);
+            const loadingEl = document.getElementById('loading');
+            if (loadingEl) {
+                loadingEl.innerHTML = 'Error loading visualization. Please refresh the page.';
+                loadingEl.style.color = '#ff6b6b';
+            }
+        }
+    </script>
+</body>
+</html>
