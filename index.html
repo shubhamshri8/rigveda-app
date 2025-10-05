@@ -19,6 +19,7 @@
             overflow: hidden;
             background: #000;
             color: #fff;
+            cursor: default;
         }
         
         #canvas-container {
@@ -119,6 +120,82 @@
             z-index: 10;
         }
         
+        #search-container {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 165, 0, 0.4);
+            box-shadow: 0 8px 32px rgba(255, 165, 0, 0.3);
+            z-index: 15;
+            min-width: 400px;
+        }
+        
+        #search-box {
+            width: 100%;
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 165, 0, 0.3);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        
+        #search-box:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #ffa500;
+            box-shadow: 0 0 10px rgba(255, 165, 0, 0.3);
+        }
+        
+        #search-box::placeholder {
+            color: #aaa;
+        }
+        
+        .search-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        #search-results {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #ffcc00;
+            min-height: 18px;
+        }
+        
+        #clear-search {
+            background: rgba(255, 165, 0, 0.2);
+            border: 1px solid rgba(255, 165, 0, 0.4);
+            color: #ffa500;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        #clear-search:hover {
+            background: rgba(255, 165, 0, 0.4);
+            border-color: #ffa500;
+        }
+        
+        #clear-search:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        
+        .search-icon {
+            font-size: 18px;
+        }
+        
         #legend h3 {
             font-size: 16px;
             margin-bottom: 12px;
@@ -155,18 +232,249 @@
             color: #ffcc00;
             font-weight: bold;
         }
+        
+        #audio-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 165, 0, 0.3);
+            z-index: 10;
+            min-width: 180px;
+        }
+        
+        #audio-controls h4 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #ffa500;
+        }
+        
+        .audio-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 12px;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 22px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.2);
+            transition: 0.3s;
+            border-radius: 22px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: #ffa500;
+        }
+        
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(22px);
+        }
+        
+        #volume-control {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 165, 0, 0.3);
+        }
+        
+        #volume-slider {
+            width: 100%;
+            margin-top: 5px;
+            accent-color: #ffa500;
+        }
+        
+        .volume-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #aaa;
+            margin-bottom: 3px;
+        }
+        
+        #navigation-controls {
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 165, 0, 0.3);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .nav-button {
+            background: rgba(255, 165, 0, 0.2);
+            border: 1px solid rgba(255, 165, 0, 0.4);
+            color: #ffa500;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            text-align: center;
+            min-width: 120px;
+        }
+        
+        .nav-button:hover {
+            background: rgba(255, 165, 0, 0.4);
+            border-color: #ffa500;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 165, 0, 0.3);
+        }
+        
+        .nav-button:active {
+            transform: translateY(0);
+        }
+        
+        .nav-button.active {
+            background: rgba(255, 165, 0, 0.5);
+            border-color: #ffa500;
+        }
+        
+        #stats-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px 25px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 165, 0, 0.4);
+            z-index: 10;
+            display: none;
+        }
+        
+        #stats-panel.visible {
+            display: block;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-top: 10px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffa500;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            color: #aaa;
+            text-transform: uppercase;
+        }
+        
+        .stats-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .stats-header h4 {
+            font-size: 14px;
+            color: #ffa500;
+            margin: 0;
+        }
+        
+        .close-stats {
+            background: none;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .close-stats:hover {
+            color: #ffa500;
+        }
+        
+        .planet-label {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 165, 0, 0.5);
+            pointer-events: none;
+            user-select: none;
+        }
     </style>
 </head>
 <body>
     <div id="canvas-container"></div>
+    
+    <div id="search-container">
+        <div class="search-header">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="search-box" placeholder="Search by deity, text, theme, or rishi...">
+            <button id="clear-search" disabled>Clear</button>
+        </div>
+        <div id="search-results"></div>
+    </div>
     
     <div id="info-panel">
         <h1>🌌 Cosmic Map of Rig Veda</h1>
         <p>Journey through the ancient wisdom of the Rig Veda Samhita, visualized as a cosmic solar system.</p>
         <p><span class="highlight">10 Mandalas</span> orbit like planets around the central sun of knowledge.</p>
         <p>Each planet has <span class="highlight">moons representing Suktas</span> (hymns).</p>
-        <p><strong>Click on planets</strong> to learn about each Mandala.</p>
-        <p><strong>Click on moons</strong> to read actual Sanskrit verses with translations!</p>
+        <p><strong>🔍 Use search above</strong> to find verses by deity, theme, or text.</p>
+        <p><strong>🔊 Enable audio</strong> in bottom-right for immersive sounds.</p>
+        <p><strong>Click planets</strong> to learn about each Mandala.</p>
+        <p><strong>Click moons</strong> to read actual Sanskrit verses!</p>
+        <p style="margin-top: 10px; font-size: 11px; color: #888;"><em>Try: "Agni", "creation", "Soma", "fire", "philosophy"</em></p>
     </div>
     
     <div id="legend">
@@ -193,16 +501,82 @@
         </div>
     </div>
     
+    <div id="navigation-controls">
+        <button class="nav-button" id="home-button">🏠 Home</button>
+        <button class="nav-button" id="auto-rotate-button">🔄 Auto-Rotate</button>
+        <button class="nav-button" id="stats-button">📊 Statistics</button>
+    </div>
+    
+    <div id="stats-panel">
+        <div class="stats-header">
+            <h4>📊 Rig Veda Statistics</h4>
+            <button class="close-stats" id="close-stats">✕</button>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span class="stat-value">10,552</span>
+                <span class="stat-label">Total Verses</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">1,028</span>
+                <span class="stat-label">Total Suktas</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">10</span>
+                <span class="stat-label">Mandalas</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="deity-count">5+</span>
+                <span class="stat-label">Main Deities</span>
+            </div>
+        </div>
+    </div>
+    
     <div id="controls">
         <p><strong>🖱️ Controls:</strong></p>
         <p>• Left Click + Drag: Rotate view</p>
         <p>• Scroll: Zoom in/out</p>
         <p>• Click objects: View details</p>
+        <p style="margin-top: 8px;"><strong>⌨️ Keyboard:</strong></p>
+        <p>• Ctrl/Cmd + F: Focus search</p>
+        <p>• Escape: Clear search</p>
         <p style="margin-top: 12px; font-size: 10px; border-top: 1px solid rgba(255,165,0,0.3); padding-top: 8px;">
             <strong>Data Sources:</strong><br>
             Text: R.T.H. Griffith translation (Public Domain)<br>
             Structure: Rig Veda Samhita (Mandalas 1-10)
         </p>
+    </div>
+    
+    <div id="audio-controls">
+        <h4>🔊 Audio</h4>
+        <div class="audio-toggle">
+            <span>Click Sounds</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="click-sounds-toggle" checked>
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+        <div class="audio-toggle">
+            <span>Hover Sounds</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="hover-sounds-toggle" checked>
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+        <div class="audio-toggle">
+            <span>Background Music</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="music-toggle">
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+        <div id="volume-control">
+            <div class="volume-label">
+                <span>Volume</span>
+                <span id="volume-value">70%</span>
+            </div>
+            <input type="range" id="volume-slider" min="0" max="100" value="70">
+        </div>
     </div>
     
     <div class="loading" id="loading">Loading the Cosmic Rig Veda...</div>
@@ -212,7 +586,7 @@
         // Wrap everything in try-catch to handle errors gracefully
         try {
             // Sample Rig Veda mantras (from public domain Griffith translation)
-            // These are examples - you can load complete dataset from the sources we found
+            // Expanded database with 25+ verses across all Mandalas
             const sampleMantras = {
                 "1.1.1": {
                     sanskrit: "अग्निमीळे पुरोहितं यज्ञस्य देवमृत्विजम्",
@@ -235,11 +609,39 @@
                     deity: "Varuna",
                     rishi: "Śunahśepa Ājīgarti"
                 },
+                "1.32.1": {
+                    sanskrit: "इन्द्रस्य नु वीर्याणि प्र वोचं यानि चकार प्रथमानि वज्री",
+                    transliteration: "indrasya nu vīryāṇi pra vocaṃ yāni cakāra prathamāni vajrī",
+                    translation: "I will declare the manly deeds of Indra, the first that he achieved, the Thunder-wielder",
+                    deity: "Indra",
+                    rishi: "Hiraṇyastūpa Āṅgirasa"
+                },
+                "1.50.1": {
+                    sanskrit: "उदुत्यं जातवेदसं देवं वहन्ति केतवः",
+                    transliteration: "ud u tyaṃ jātavedasaṃ devaṃ vahanti ketavaḥ",
+                    translation: "His beams bear up that God who knows all life, Sūrya, that all may look on him",
+                    deity: "Sūrya",
+                    rishi: "Praskaṇva Kāṇva"
+                },
+                "1.154.1": {
+                    sanskrit: "विष्णोर्नु कं वीर्याणि प्र वोचं यः पार्थिवानि विममे रजांसि",
+                    transliteration: "viṣṇor nu kaṃ vīryāṇi pra vocaṃ yaḥ pārthivāni vimame rajāṃsi",
+                    translation: "I will declare the mighty deeds of Vishnu, who has measured out the earthly regions",
+                    deity: "Vishnu",
+                    rishi: "Dīrghatamas Aucathya"
+                },
                 "2.1.1": {
                     sanskrit: "त्वमग्ने द्युभिस्त्वमाशुशुक्षणिस्त्वमद्भ्यस्त्वमश्मनस्परि",
                     transliteration: "tvam agne dyubhis tvam āśuśukṣaṇis tvam adbhyas tvam aśmanas pari",
                     translation: "Thou, Agni, shining in thy glory through the days, art brought to life from out the waters",
                     deity: "Agni",
+                    rishi: "Gṛtsamada Bhārgava Śaunaka"
+                },
+                "2.12.1": {
+                    sanskrit: "यो जात एव प्रथमो मनस्वान्देवो देवान्क्रतुना पर्यभूषत्",
+                    transliteration: "yo jāta eva prathamo manasvān devo devān kratunā pary abhūṣat",
+                    translation: "He who, just born, chief God of lofty spirit by power and might became the Gods' protector",
+                    deity: "Indra",
                     rishi: "Gṛtsamada Bhārgava Śaunaka"
                 },
                 "3.1.1": {
@@ -249,11 +651,25 @@
                     deity: "Agni",
                     rishi: "Viśvāmitra Gāthina"
                 },
+                "3.62.10": {
+                    sanskrit: "तत्सवितुर्वरेण्यं भर्गो देवस्य धीमहि",
+                    transliteration: "tat savitur vareṇyaṃ bhargo devasya dhīmahi",
+                    translation: "May we attain that excellent glory of Savitar the god",
+                    deity: "Savitar",
+                    rishi: "Viśvāmitra Gāthina"
+                },
                 "4.1.1": {
                     sanskrit: "वर्धा यजस्व रयिमिन्द्रियाय सुषूदतीमुषसं देवयन्तीम्",
                     transliteration: "vardhā yajasva rayim indriyāya suṣūdatīm uṣasaṃ devayantīm",
                     translation: "Offer worship with oblations to the Bright One, the Singer, with the singers magnify him",
                     deity: "Agni",
+                    rishi: "Vāmadeva Gautama"
+                },
+                "4.26.1": {
+                    sanskrit: "अहं मनुरभवं सूर्यश्च",
+                    transliteration: "ahaṃ manur abhavaṃ sūryaś ca",
+                    translation: "I was Manu and the Sun",
+                    deity: "Indra",
                     rishi: "Vāmadeva Gautama"
                 },
                 "5.1.1": {
@@ -263,10 +679,24 @@
                     deity: "Agni",
                     rishi: "Budha Ātreya"
                 },
+                "5.85.7": {
+                    sanskrit: "नाहं तं मर्त्यमाधृषेयमो यस्य पुरुष्ट्रा न वरन्ते सख्यम्",
+                    transliteration: "nāhaṃ taṃ martyam ādhṛṣeyam o yasya puruṣṭrā na varante sakhyam",
+                    translation: "I would not dare to harm that mortal man whose friendship the Generous Maruts value highly",
+                    deity: "Parjanya (Rain)",
+                    rishi: "Prayoga Ātreya"
+                },
                 "6.1.1": {
                     sanskrit: "अग्निं वो देवमध्वरे होतारं सत्यतातिम्",
                     transliteration: "agniṃ vo devam adhvare hotāraṃ satyatātim",
                     translation: "Agni the True, to worship and to serve with sacrifice, as the best Priest",
+                    deity: "Agni",
+                    rishi: "Bharadvāja Bārhaspatya"
+                },
+                "6.9.1": {
+                    sanskrit: "उभा ते अग्ने अजरे पुरूणि सन्ति धामानि वन्दिमा",
+                    transliteration: "ubhā te agne ajare purūṇi santi dhāmāni vandimā",
+                    translation: "Both thy two places, Agni, unaging, where thou dwellest, we praise",
                     deity: "Agni",
                     rishi: "Bharadvāja Bārhaspatya"
                 },
@@ -277,11 +707,32 @@
                     deity: "Agni",
                     rishi: "Vasiṣṭha Maitrāvaruṇi"
                 },
+                "7.49.1": {
+                    sanskrit: "अपां नपात्पृथिवी द्यौरुत त्वम्",
+                    transliteration: "apāṃ napāt pṛthivī dyaur uta tvam",
+                    translation: "Son of Waters, Earth and Heaven aid thee",
+                    deity: "Waters",
+                    rishi: "Vasiṣṭha Maitrāvaruṇi"
+                },
+                "7.86.1": {
+                    sanskrit: "बोध्यग्रे वरुणं यज्ञैरिहाव्ये हव्यैर्ये",
+                    transliteration: "bodhy agre varuṇaṃ yajñair ihāvye havyair ye",
+                    translation: "Sing forth to Varuna with worship and with hymns",
+                    deity: "Varuna",
+                    rishi: "Vasiṣṭha Maitrāvaruṇi"
+                },
                 "8.1.1": {
                     sanskrit: "इन्द्रमिद्गाथिनो बृहदिन्द्रमर्केभिरर्किणः",
                     transliteration: "indram id gāthino bṛhad indram arkebhir arkiṇaḥ",
                     translation: "They who stand round him as he moves harness the bright, the ruddy Steed",
                     deity: "Indra",
+                    rishi: "Kaṇva Ghaura"
+                },
+                "8.48.3": {
+                    sanskrit: "न तस्य रोदसी उभे न यातो अन्तं आपतुः",
+                    transliteration: "na tasya rodasī ubhe na yāto antaṃ āpatuḥ",
+                    translation: "Not even these two world-halves have attained his end nor reached the limit of his might",
+                    deity: "Soma",
                     rishi: "Kaṇva Ghaura"
                 },
                 "9.1.1": {
@@ -291,6 +742,13 @@
                     deity: "Soma Pavamana",
                     rishi: "Madhuchhandas Vaiśvāmitra"
                 },
+                "9.67.1": {
+                    sanskrit: "पवस्व वाजसातमः सोम द्रोणान्यापयः",
+                    transliteration: "pavasva vājasātamaḥ soma droṇāny āpayaḥ",
+                    translation: "Flow on, most excellent giver of strength, O Soma, filling the wooden vats",
+                    deity: "Soma Pavamana",
+                    rishi: "Pavamāna Kāśyapa"
+                },
                 "10.1.1": {
                     sanskrit: "गायत्रं त्रैष्टुभं जागतं अनुष्टुभमार्चत",
                     transliteration: "gāyatraṃ traiṣṭubhaṃ jāgataṃ anuṣṭubham ārchata",
@@ -298,12 +756,26 @@
                     deity: "Agni",
                     rishi: "Trita Āptya"
                 },
+                "10.90.1": {
+                    sanskrit: "सहस्रशीर्षा पुरुषः सहस्राक्षः सहस्रपात्",
+                    transliteration: "sahasraśīrṣā puruṣaḥ sahasrākṣaḥ sahasrapāt",
+                    translation: "The Purusha has a thousand heads, a thousand eyes, a thousand feet",
+                    deity: "Purusha",
+                    rishi: "Nārāyaṇa"
+                },
                 "10.129.1": {
                     sanskrit: "नासदासीन्नो सदासीत्तदानीं नासीद्रजो नो व्योमा परो यत्",
                     transliteration: "nāsad āsīn no sad āsīt tadānīṃ nāsīd rajo no vyomā paro yat",
                     translation: "Then was not non-existent nor existent: there was no realm of air, no sky beyond it",
-                    deity: "Various",
+                    deity: "Creation",
                     rishi: "Prajāpati Parameṣṭhin"
+                },
+                "10.191.2": {
+                    sanskrit: "समानी व आकूतिः समाना हृदयानि वः",
+                    transliteration: "samānī va ākūtiḥ samānā hṛdayāni vaḥ",
+                    translation: "United be your purpose, harmonious be your feelings, united be your hearts",
+                    deity: "Harmony",
+                    rishi: "Saṃvanana Āṅgirasa"
                 }
             };
             
@@ -408,6 +880,297 @@
             const clickableObjects = [];
             const planets = [];
             
+            // Search state
+            let searchActive = false;
+            let matchingObjects = new Set();
+            
+            // Search function
+            function performSearch(query) {
+                const lowerQuery = query.toLowerCase().trim();
+                
+                if (!lowerQuery) {
+                    // Clear search
+                    searchActive = false;
+                    matchingObjects.clear();
+                    resetObjectOpacity();
+                    document.getElementById('search-results').textContent = '';
+                    document.getElementById('clear-search').disabled = true;
+                    return;
+                }
+                
+                searchActive = true;
+                matchingObjects.clear();
+                document.getElementById('clear-search').disabled = false;
+                
+                let matchCount = 0;
+                
+                // Search through mantras
+                Object.keys(sampleMantras).forEach(key => {
+                    const mantra = sampleMantras[key];
+                    const mandalaNum = parseInt(key.split('.')[0]);
+                    
+                    // Check if mantra matches search
+                    const matches = 
+                        mantra.translation.toLowerCase().includes(lowerQuery) ||
+                        mantra.deity.toLowerCase().includes(lowerQuery) ||
+                        mantra.rishi.toLowerCase().includes(lowerQuery) ||
+                        mantra.sanskrit.includes(lowerQuery) ||
+                        mantra.transliteration.toLowerCase().includes(lowerQuery);
+                    
+                    if (matches) {
+                        matchCount++;
+                        // Find and mark matching objects
+                        clickableObjects.forEach(obj => {
+                            if (obj.userData.mandala === mandalaNum) {
+                                matchingObjects.add(obj);
+                            }
+                        });
+                    }
+                });
+                
+                // Search through Mandala themes and deities
+                rigVedaData.forEach((mandalaData, index) => {
+                    const matches = 
+                        mandalaData.deity.toLowerCase().includes(lowerQuery) ||
+                        mandalaData.theme.toLowerCase().includes(lowerQuery) ||
+                        mandalaData.rishi.toLowerCase().includes(lowerQuery) ||
+                        `mandala ${mandalaData.mandala}`.includes(lowerQuery);
+                    
+                    if (matches) {
+                        clickableObjects.forEach(obj => {
+                            if (obj.userData.mandala === mandalaData.mandala) {
+                                matchingObjects.add(obj);
+                                matchCount++;
+                            }
+                        });
+                    }
+                });
+                
+                // Update visual feedback
+                updateSearchVisuals();
+                
+                // Update results text
+                const resultsText = matchCount > 0 
+                    ? `✨ Found ${matchCount} matching ${matchCount === 1 ? 'result' : 'results'}` 
+                    : '❌ No results found';
+                document.getElementById('search-results').textContent = resultsText;
+            }
+            
+            function updateSearchVisuals() {
+                clickableObjects.forEach(obj => {
+                    if (matchingObjects.has(obj)) {
+                        // Highlight matching objects
+                        obj.material.emissiveIntensity = 0.8;
+                        obj.material.opacity = 1;
+                        obj.material.transparent = false;
+                    } else {
+                        // Dim non-matching objects
+                        obj.material.emissiveIntensity = 0.1;
+                        obj.material.opacity = 0.3;
+                        obj.material.transparent = true;
+                    }
+                });
+            }
+            
+            function resetObjectOpacity() {
+                clickableObjects.forEach(obj => {
+                    obj.material.opacity = 1;
+                    obj.material.transparent = false;
+                    if (obj.userData.type === 'planet') {
+                        obj.material.emissiveIntensity = 0.3;
+                    } else {
+                        obj.material.emissiveIntensity = 0.2;
+                    }
+                });
+            }
+            
+            // Search event listeners
+            const searchBox = document.getElementById('search-box');
+            const clearButton = document.getElementById('clear-search');
+            
+            searchBox.addEventListener('input', (e) => {
+                performSearch(e.target.value);
+            });
+            
+            clearButton.addEventListener('click', () => {
+                searchBox.value = '';
+                performSearch('');
+            });
+            
+            // Keyboard shortcut: Ctrl+F or Cmd+F to focus search
+            window.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                    e.preventDefault();
+                    searchBox.focus();
+                }
+                // Escape to clear search
+                if (e.key === 'Escape' && searchActive) {
+                    searchBox.value = '';
+                    performSearch('');
+                }
+            });
+            
+            // ============================================
+            // AUDIO SYSTEM
+            // ============================================
+            
+            // Create audio context
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            const audioContext = new AudioContext();
+            
+            // Audio settings
+            let clickSoundsEnabled = true;
+            let hoverSoundsEnabled = true;
+            let musicEnabled = false;
+            let masterVolume = 0.7;
+            
+            // Background music oscillator
+            let musicOscillator = null;
+            let musicGainNode = null;
+            
+            // Sound synthesis functions
+            function playClickSound(type = 'planet') {
+                if (!clickSoundsEnabled) return;
+                
+                const now = audioContext.currentTime;
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                if (type === 'planet') {
+                    // Deeper, resonant sound for planets
+                    oscillator.frequency.setValueAtTime(440, now);
+                    oscillator.frequency.exponentialRampToValueAtTime(220, now + 0.1);
+                    gainNode.gain.setValueAtTime(masterVolume * 0.3, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                } else if (type === 'moon') {
+                    // Higher, bell-like sound for moons
+                    oscillator.frequency.setValueAtTime(880, now);
+                    oscillator.frequency.exponentialRampToValueAtTime(440, now + 0.15);
+                    gainNode.gain.setValueAtTime(masterVolume * 0.2, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                } else if (type === 'sun') {
+                    // Deep gong sound for sun
+                    oscillator.frequency.setValueAtTime(110, now);
+                    oscillator.frequency.exponentialRampToValueAtTime(55, now + 0.2);
+                    gainNode.gain.setValueAtTime(masterVolume * 0.4, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+                }
+                
+                oscillator.type = 'sine';
+                oscillator.start(now);
+                oscillator.stop(now + 0.8);
+            }
+            
+            function playHoverSound() {
+                if (!hoverSoundsEnabled) return;
+                
+                const now = audioContext.currentTime;
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                // Soft, subtle hover sound
+                oscillator.frequency.setValueAtTime(1200, now);
+                oscillator.frequency.exponentialRampToValueAtTime(1400, now + 0.05);
+                gainNode.gain.setValueAtTime(masterVolume * 0.05, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                
+                oscillator.type = 'sine';
+                oscillator.start(now);
+                oscillator.stop(now + 0.1);
+            }
+            
+            function startBackgroundMusic() {
+                if (musicOscillator) return; // Already playing
+                
+                // Create ambient drone
+                musicOscillator = audioContext.createOscillator();
+                musicGainNode = audioContext.createGain();
+                
+                const filter = audioContext.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = 800;
+                
+                musicOscillator.connect(filter);
+                filter.connect(musicGainNode);
+                musicGainNode.connect(audioContext.destination);
+                
+                // Om-like drone (around A note)
+                musicOscillator.frequency.value = 220;
+                musicOscillator.type = 'sine';
+                
+                // Gentle volume
+                musicGainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                musicGainNode.gain.linearRampToValueAtTime(masterVolume * 0.15, audioContext.currentTime + 2);
+                
+                musicOscillator.start();
+            }
+            
+            function stopBackgroundMusic() {
+                if (!musicOscillator) return;
+                
+                musicGainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 1);
+                setTimeout(() => {
+                    if (musicOscillator) {
+                        musicOscillator.stop();
+                        musicOscillator = null;
+                        musicGainNode = null;
+                    }
+                }, 1000);
+            }
+            
+            function updateMusicVolume() {
+                if (musicGainNode && musicEnabled) {
+                    musicGainNode.gain.linearRampToValueAtTime(
+                        masterVolume * 0.15, 
+                        audioContext.currentTime + 0.1
+                    );
+                }
+            }
+            
+            // Audio control event listeners
+            document.getElementById('click-sounds-toggle').addEventListener('change', (e) => {
+                clickSoundsEnabled = e.target.checked;
+                if (clickSoundsEnabled) {
+                    playClickSound('planet'); // Test sound
+                }
+            });
+            
+            document.getElementById('hover-sounds-toggle').addEventListener('change', (e) => {
+                hoverSoundsEnabled = e.target.checked;
+            });
+            
+            document.getElementById('music-toggle').addEventListener('change', (e) => {
+                musicEnabled = e.target.checked;
+                if (musicEnabled) {
+                    // Resume audio context if suspended (browser autoplay policy)
+                    if (audioContext.state === 'suspended') {
+                        audioContext.resume().then(() => {
+                            startBackgroundMusic();
+                        });
+                    } else {
+                        startBackgroundMusic();
+                    }
+                } else {
+                    stopBackgroundMusic();
+                }
+            });
+            
+            document.getElementById('volume-slider').addEventListener('input', (e) => {
+                masterVolume = e.target.value / 100;
+                document.getElementById('volume-value').textContent = e.target.value + '%';
+                updateMusicVolume();
+            });
+            
+            // Hover sound tracking
+            let lastHoverTime = 0;
+            const hoverSoundThrottle = 150; // ms between hover sounds
+            
             // Create planets (Mandalas) and moons (Suktas)
             rigVedaData.forEach((mandalaData, index) => {
                 const orbitRadius = 40 + (index * 25);
@@ -471,7 +1234,9 @@
                     const moonMaterial = new THREE.MeshPhongMaterial({ 
                         color: 0xcccccc,
                         emissive: 0x444444,
-                        emissiveIntensity: 0.2
+                        emissiveIntensity: 0.2,
+                        transparent: false,
+                        opacity: 1
                     });
                     const moon = new THREE.Mesh(moonGeometry, moonMaterial);
                     
@@ -578,12 +1343,58 @@
                 if (intersects.length > 0) {
                     const obj = intersects[0].object;
                     if (obj.userData && (obj.userData.type === 'planet' || obj.userData.type === 'moon')) {
+                        // Play appropriate sound
+                        playClickSound(obj.userData.type);
                         displayInfo(obj.userData);
+                    }
+                } else {
+                    // Check if clicked on sun
+                    const sunIntersects = raycaster.intersectObjects([sun, sunGlow]);
+                    if (sunIntersects.length > 0) {
+                        playClickSound('sun');
+                        displaySunInfo();
                     }
                 }
             }
             
+            function displaySunInfo() {
+                const panel = document.getElementById('info-panel');
+                panel.innerHTML = `
+                    <h1>☀️ The Sun of Knowledge</h1>
+                    <p class="mandala-name">Source of Vedic Wisdom</p>
+                    <p><strong>Represents:</strong> The eternal source of knowledge and enlightenment</p>
+                    <p><strong>Significance:</strong> Just as planets orbit the sun, all Vedic wisdom flows from the central truth</p>
+                    <p style="margin-top: 15px; font-size: 13px; font-style: italic; color: #ffcc00;">
+                        "From the unmanifest to the manifest, from darkness to light, from ignorance to knowledge"
+                    </p>
+                    <p class="sukta-info">The 10 Mandalas circle this eternal light, each contributing to the cosmic harmony.</p>
+                `;
+            }
+            
             window.addEventListener('click', onMouseClick);
+            
+            // Mouse move for hover effects
+            renderer.domElement.addEventListener('mousemove', (event) => {
+                if (isDragging) return;
+                
+                // Throttle hover sound
+                const now = Date.now();
+                if (now - lastHoverTime < hoverSoundThrottle) return;
+                
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(clickableObjects);
+                
+                if (intersects.length > 0) {
+                    document.body.style.cursor = 'pointer';
+                    playHoverSound();
+                    lastHoverTime = now;
+                } else {
+                    document.body.style.cursor = 'default';
+                }
+            });
             
             function displayInfo(data) {
                 const panel = document.getElementById('info-panel');
@@ -648,8 +1459,10 @@
             }
             
             // Animation loop
+            let animationTime = 0;
             function animate() {
                 requestAnimationFrame(animate);
+                animationTime += 0.02;
                 
                 // Rotate sun
                 sun.rotation.y += 0.001;
@@ -671,6 +1484,12 @@
                         
                         obj.position.x = parent.position.x + Math.cos(obj.userData.angle) * obj.userData.orbitRadius;
                         obj.position.z = parent.position.z + Math.sin(obj.userData.angle) * obj.userData.orbitRadius;
+                    }
+                    
+                    // Pulsing effect for matched objects during search
+                    if (searchActive && matchingObjects.has(obj)) {
+                        const pulseIntensity = 0.5 + Math.sin(animationTime * 2) * 0.3;
+                        obj.material.emissiveIntensity = pulseIntensity;
                     }
                 });
                 
