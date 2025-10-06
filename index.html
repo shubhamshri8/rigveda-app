@@ -468,13 +468,13 @@
     <div id="info-panel">
         <h1>🌌 Cosmic Map of Rig Veda</h1>
         <p>Journey through the ancient wisdom of the Rig Veda Samhita, visualized as a cosmic solar system.</p>
-        <p><span class="highlight">10 Mandalas</span> orbit like planets around the central sun of knowledge.</p>
+        <p><span class="highlight">10 Mandalas</span> orbit like planets with floating labels.</p>
         <p>Each planet has <span class="highlight">moons representing Suktas</span> (hymns).</p>
-        <p><strong>🔍 Use search above</strong> to find verses by deity, theme, or text.</p>
-        <p><strong>🔊 Enable audio</strong> in bottom-right for immersive sounds.</p>
-        <p><strong>Click planets</strong> to learn about each Mandala.</p>
-        <p><strong>Click moons</strong> to read actual Sanskrit verses!</p>
-        <p style="margin-top: 10px; font-size: 11px; color: #888;"><em>Try: "Agni", "creation", "Soma", "fire", "philosophy"</em></p>
+        <p><strong>🔍 Search</strong> to find verses by deity, theme, or text.</p>
+        <p><strong>🔊 Audio controls</strong> in bottom-right for sounds.</p>
+        <p><strong>🎮 Navigation</strong> on right: Home, Auto-Rotate, Statistics.</p>
+        <p><strong>📊 27 authentic mantras</strong> with Sanskrit & translations!</p>
+        <p style="margin-top: 10px; font-size: 11px; color: #888;"><em>Try: "Agni", "creation", "Gayatri", "Purusha"</em></p>
     </div>
     
     <div id="legend">
@@ -831,6 +831,15 @@
             renderer.setClearColor(0x000000, 1);
             document.getElementById('canvas-container').appendChild(renderer.domElement);
             
+            // CSS2D Renderer for labels
+            const labelRenderer = document.createElement('div');
+            labelRenderer.style.position = 'absolute';
+            labelRenderer.style.top = '0px';
+            labelRenderer.style.pointerEvents = 'none';
+            labelRenderer.style.width = '100%';
+            labelRenderer.style.height = '100%';
+            document.getElementById('canvas-container').appendChild(labelRenderer);
+            
             // Lighting
             const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
             scene.add(ambientLight);
@@ -879,6 +888,13 @@
             // Store all clickable objects
             const clickableObjects = [];
             const planets = [];
+            const planetLabels = []; // For CSS2D labels
+            
+            // Navigation state
+            let autoRotateEnabled = false;
+            let autoRotateSpeed = 0.002;
+            const defaultCameraRotation = { x: 0, y: 0 };
+            const defaultCameraDistance = 300;
             
             // Search state
             let searchActive = false;
@@ -1171,6 +1187,36 @@
             let lastHoverTime = 0;
             const hoverSoundThrottle = 150; // ms between hover sounds
             
+            // ============================================
+            // NAVIGATION CONTROLS
+            // ============================================
+            
+            // Home button - reset camera
+            document.getElementById('home-button').addEventListener('click', () => {
+                cameraRotation = { x: defaultCameraRotation.x, y: defaultCameraRotation.y };
+                cameraDistance = defaultCameraDistance;
+                updateCameraPosition();
+                playClickSound('planet');
+            });
+            
+            // Auto-rotate toggle
+            document.getElementById('auto-rotate-button').addEventListener('click', (e) => {
+                autoRotateEnabled = !autoRotateEnabled;
+                e.target.classList.toggle('active');
+                playClickSound('moon');
+            });
+            
+            // Statistics panel toggle
+            document.getElementById('stats-button').addEventListener('click', () => {
+                const statsPanel = document.getElementById('stats-panel');
+                statsPanel.classList.toggle('visible');
+                playClickSound('moon');
+            });
+            
+            document.getElementById('close-stats').addEventListener('click', () => {
+                document.getElementById('stats-panel').classList.remove('visible');
+            });
+            
             // Create planets (Mandalas) and moons (Suktas)
             rigVedaData.forEach((mandalaData, index) => {
                 const orbitRadius = 40 + (index * 25);
@@ -1206,6 +1252,15 @@
                 scene.add(planet);
                 clickableObjects.push(planet);
                 planets.push(planet);
+                
+                // Create floating label for planet
+                const labelDiv = document.createElement('div');
+                labelDiv.className = 'planet-label';
+                labelDiv.textContent = `Mandala ${mandalaData.mandala}`;
+                labelDiv.style.position = 'absolute';
+                labelDiv.style.pointerEvents = 'none';
+                planetLabels.push({ planet: planet, label: labelDiv });
+                labelRenderer.appendChild(labelDiv);
                 
                 // Create orbit line
                 const orbitGeometry = new THREE.BufferGeometry();
@@ -1250,7 +1305,7 @@
                         totalSuktas: mandalaData.suktas,
                         parent: planet,
                         orbitRadius: moonOrbitRadius,
-                        orbitSpeed: 0.01 + (m * 0.005),
+                        orbitSpeed: 0.002 + (m * 0.0003),
                         angle: moonAngle
                     };
                     
@@ -1464,6 +1519,12 @@
                 requestAnimationFrame(animate);
                 animationTime += 0.02;
                 
+                // Auto-rotate camera
+                if (autoRotateEnabled && !isDragging) {
+                    cameraRotation.y += autoRotateSpeed;
+                    updateCameraPosition();
+                }
+                
                 // Rotate sun
                 sun.rotation.y += 0.001;
                 sunGlow.rotation.y -= 0.001;
@@ -1491,6 +1552,23 @@
                         const pulseIntensity = 0.5 + Math.sin(animationTime * 2) * 0.3;
                         obj.material.emissiveIntensity = pulseIntensity;
                     }
+                });
+                
+                // Update planet labels positions
+                planetLabels.forEach(({ planet, label }) => {
+                    const vector = new THREE.Vector3();
+                    vector.setFromMatrixPosition(planet.matrixWorld);
+                    vector.y += 10; // Offset above planet
+                    vector.project(camera);
+                    
+                    const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+                    const y = (vector.y * -0.5 + 0.5) * window.innerHeight;
+                    
+                    label.style.left = x + 'px';
+                    label.style.top = y + 'px';
+                    
+                    // Hide label if behind camera
+                    label.style.display = vector.z < 1 ? 'block' : 'none';
                 });
                 
                 renderer.render(scene, camera);
