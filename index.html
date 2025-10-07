@@ -58,10 +58,6 @@
             border-radius: 4px;
         }
         
-        #info-panel::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 165, 0, 0.7);
-        }
-        
         #info-panel h1 {
             font-size: 24px;
             margin-bottom: 15px;
@@ -182,7 +178,7 @@
             transition: all 0.3s ease;
         }
         
-        #clear-search:hover {
+        #clear-search:hover:not(:disabled) {
             background: rgba(255, 165, 0, 0.4);
             border-color: #ffa500;
         }
@@ -190,10 +186,6 @@
         #clear-search:disabled {
             opacity: 0.3;
             cursor: not-allowed;
-        }
-        
-        .search-icon {
-            font-size: 18px;
         }
         
         #legend h3 {
@@ -450,6 +442,29 @@
             text-shadow: 0 0 10px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 165, 0, 0.5);
             pointer-events: none;
             user-select: none;
+            position: absolute;
+            transform: translate(-50%, -50%);
+        }
+
+        @media (max-width: 768px) {
+            #info-panel, #legend, #controls {
+                max-width: 90%;
+                font-size: 12px;
+            }
+            #search-container {
+                min-width: 90%;
+                left: 5%;
+                transform: none;
+            }
+            #navigation-controls {
+                right: 10px;
+                padding: 10px;
+            }
+            .nav-button {
+                min-width: 100px;
+                padding: 8px 12px;
+                font-size: 12px;
+            }
         }
     </style>
 </head>
@@ -526,7 +541,7 @@
                 <span class="stat-label">Mandalas</span>
             </div>
             <div class="stat-item">
-                <span class="stat-value" id="deity-count">5+</span>
+                <span class="stat-value">5+</span>
                 <span class="stat-label">Main Deities</span>
             </div>
         </div>
@@ -537,14 +552,10 @@
         <p>• Left Click + Drag: Rotate view</p>
         <p>• Scroll: Zoom in/out</p>
         <p>• Click objects: View details</p>
+        <p><strong>📱 Touch:</strong> Pinch to zoom, drag to rotate</p>
         <p style="margin-top: 8px;"><strong>⌨️ Keyboard:</strong></p>
         <p>• Ctrl/Cmd + F: Focus search</p>
         <p>• Escape: Clear search</p>
-        <p style="margin-top: 12px; font-size: 10px; border-top: 1px solid rgba(255,165,0,0.3); padding-top: 8px;">
-            <strong>Data Sources:</strong><br>
-            Text: R.T.H. Griffith translation (Public Domain)<br>
-            Structure: Rig Veda Samhita (Mandalas 1-10)
-        </p>
     </div>
     
     <div id="audio-controls">
@@ -583,1023 +594,1171 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        // Wrap everything in try-catch to handle errors gracefully
-        try {
-            // Sample Rig Veda mantras (from public domain Griffith translation)
-            // Expanded database with 25+ verses across all Mandalas
-            const sampleMantras = {
-                "1.1.1": {
-                    sanskrit: "अग्निमीळे पुरोहितं यज्ञस्य देवमृत्विजम्",
-                    transliteration: "agnim īḷe purohitaṃ yajñasya devam ṛtvijam",
-                    translation: "I praise Agni, the chosen Priest, God, minister of sacrifice",
-                    deity: "Agni",
-                    rishi: "Madhuchhandas Vaiśvāmitra"
-                },
-                "1.1.2": {
-                    sanskrit: "होतारं रत्नधातमम्",
-                    transliteration: "hotāraṃ ratnadhātamam",
-                    translation: "The invoker, lavishest of wealth",
-                    deity: "Agni",
-                    rishi: "Madhuchhandas Vaiśvāmitra"
-                },
-                "1.25.1": {
-                    sanskrit: "कद्रुश्चिदस्य वर्णस्य पर्येति स्पशो यथा",
-                    transliteration: "kad ruś cid asya varṇasya pary eti spaśo yathā",
-                    translation: "What thing I truly am I know not clearly: mysterious, fettered in my mind I wander",
-                    deity: "Varuna",
-                    rishi: "Śunahśepa Ājīgarti"
-                },
-                "1.32.1": {
-                    sanskrit: "इन्द्रस्य नु वीर्याणि प्र वोचं यानि चकार प्रथमानि वज्री",
-                    transliteration: "indrasya nu vīryāṇi pra vocaṃ yāni cakāra prathamāni vajrī",
-                    translation: "I will declare the manly deeds of Indra, the first that he achieved, the Thunder-wielder",
-                    deity: "Indra",
-                    rishi: "Hiraṇyastūpa Āṅgirasa"
-                },
-                "1.50.1": {
-                    sanskrit: "उदुत्यं जातवेदसं देवं वहन्ति केतवः",
-                    transliteration: "ud u tyaṃ jātavedasaṃ devaṃ vahanti ketavaḥ",
-                    translation: "His beams bear up that God who knows all life, Sūrya, that all may look on him",
-                    deity: "Sūrya",
-                    rishi: "Praskaṇva Kāṇva"
-                },
-                "1.154.1": {
-                    sanskrit: "विष्णोर्नु कं वीर्याणि प्र वोचं यः पार्थिवानि विममे रजांसि",
-                    transliteration: "viṣṇor nu kaṃ vīryāṇi pra vocaṃ yaḥ pārthivāni vimame rajāṃsi",
-                    translation: "I will declare the mighty deeds of Vishnu, who has measured out the earthly regions",
-                    deity: "Vishnu",
-                    rishi: "Dīrghatamas Aucathya"
-                },
-                "2.1.1": {
-                    sanskrit: "त्वमग्ने द्युभिस्त्वमाशुशुक्षणिस्त्वमद्भ्यस्त्वमश्मनस्परि",
-                    transliteration: "tvam agne dyubhis tvam āśuśukṣaṇis tvam adbhyas tvam aśmanas pari",
-                    translation: "Thou, Agni, shining in thy glory through the days, art brought to life from out the waters",
-                    deity: "Agni",
-                    rishi: "Gṛtsamada Bhārgava Śaunaka"
-                },
-                "2.12.1": {
-                    sanskrit: "यो जात एव प्रथमो मनस्वान्देवो देवान्क्रतुना पर्यभूषत्",
-                    transliteration: "yo jāta eva prathamo manasvān devo devān kratunā pary abhūṣat",
-                    translation: "He who, just born, chief God of lofty spirit by power and might became the Gods' protector",
-                    deity: "Indra",
-                    rishi: "Gṛtsamada Bhārgava Śaunaka"
-                },
-                "3.1.1": {
-                    sanskrit: "प्र वो महे सुभरणाय शूषं स्तोममृक्वभ्यो अर्हणाय तक्षम",
-                    transliteration: "pra vo mahe subharaṇāya śūṣaṃ stomam ṛkvabhyo arhaṇāya takṣam",
-                    translation: "I send my voice as herald to the Rik singers, I, Rishi's son, chief of the glorious kinsmen",
-                    deity: "Agni",
-                    rishi: "Viśvāmitra Gāthina"
-                },
-                "3.62.10": {
-                    sanskrit: "तत्सवितुर्वरेण्यं भर्गो देवस्य धीमहि",
-                    transliteration: "tat savitur vareṇyaṃ bhargo devasya dhīmahi",
-                    translation: "May we attain that excellent glory of Savitar the god",
-                    deity: "Savitar",
-                    rishi: "Viśvāmitra Gāthina"
-                },
-                "4.1.1": {
-                    sanskrit: "वर्धा यजस्व रयिमिन्द्रियाय सुषूदतीमुषसं देवयन्तीम्",
-                    transliteration: "vardhā yajasva rayim indriyāya suṣūdatīm uṣasaṃ devayantīm",
-                    translation: "Offer worship with oblations to the Bright One, the Singer, with the singers magnify him",
-                    deity: "Agni",
-                    rishi: "Vāmadeva Gautama"
-                },
-                "4.26.1": {
-                    sanskrit: "अहं मनुरभवं सूर्यश्च",
-                    transliteration: "ahaṃ manur abhavaṃ sūryaś ca",
-                    translation: "I was Manu and the Sun",
-                    deity: "Indra",
-                    rishi: "Vāmadeva Gautama"
-                },
-                "5.1.1": {
-                    sanskrit: "प्रातर्जितं भरत सन्तमग्निं धियो हिनोत यज्ञियाय",
-                    transliteration: "prātar jitaṃ bharata santam agniṃ dhiyo hinota yajñiyāya",
-                    translation: "Produce thy stream of flames like a Rishi bearing his sacred words",
-                    deity: "Agni",
-                    rishi: "Budha Ātreya"
-                },
-                "5.85.7": {
-                    sanskrit: "नाहं तं मर्त्यमाधृषेयमो यस्य पुरुष्ट्रा न वरन्ते सख्यम्",
-                    transliteration: "nāhaṃ taṃ martyam ādhṛṣeyam o yasya puruṣṭrā na varante sakhyam",
-                    translation: "I would not dare to harm that mortal man whose friendship the Generous Maruts value highly",
-                    deity: "Parjanya (Rain)",
-                    rishi: "Prayoga Ātreya"
-                },
-                "6.1.1": {
-                    sanskrit: "अग्निं वो देवमध्वरे होतारं सत्यतातिम्",
-                    transliteration: "agniṃ vo devam adhvare hotāraṃ satyatātim",
-                    translation: "Agni the True, to worship and to serve with sacrifice, as the best Priest",
-                    deity: "Agni",
-                    rishi: "Bharadvāja Bārhaspatya"
-                },
-                "6.9.1": {
-                    sanskrit: "उभा ते अग्ने अजरे पुरूणि सन्ति धामानि वन्दिमा",
-                    transliteration: "ubhā te agne ajare purūṇi santi dhāmāni vandimā",
-                    translation: "Both thy two places, Agni, unaging, where thou dwellest, we praise",
-                    deity: "Agni",
-                    rishi: "Bharadvāja Bārhaspatya"
-                },
-                "7.1.1": {
-                    sanskrit: "प्रति ष्मा सु मतयो युयुक्षन्नग्ने विश्वानि हव्या जुहोत",
-                    transliteration: "prati ṣmā su matayo yuyukṣann agne viśvāni havyā juhota",
-                    translation: "The singers hymn thee, they who chant the psalm, and eagerly, with every hymn",
-                    deity: "Agni",
-                    rishi: "Vasiṣṭha Maitrāvaruṇi"
-                },
-                "7.49.1": {
-                    sanskrit: "अपां नपात्पृथिवी द्यौरुत त्वम्",
-                    transliteration: "apāṃ napāt pṛthivī dyaur uta tvam",
-                    translation: "Son of Waters, Earth and Heaven aid thee",
-                    deity: "Waters",
-                    rishi: "Vasiṣṭha Maitrāvaruṇi"
-                },
-                "7.86.1": {
-                    sanskrit: "बोध्यग्रे वरुणं यज्ञैरिहाव्ये हव्यैर्ये",
-                    transliteration: "bodhy agre varuṇaṃ yajñair ihāvye havyair ye",
-                    translation: "Sing forth to Varuna with worship and with hymns",
-                    deity: "Varuna",
-                    rishi: "Vasiṣṭha Maitrāvaruṇi"
-                },
-                "8.1.1": {
-                    sanskrit: "इन्द्रमिद्गाथिनो बृहदिन्द्रमर्केभिरर्किणः",
-                    transliteration: "indram id gāthino bṛhad indram arkebhir arkiṇaḥ",
-                    translation: "They who stand round him as he moves harness the bright, the ruddy Steed",
-                    deity: "Indra",
-                    rishi: "Kaṇva Ghaura"
-                },
-                "8.48.3": {
-                    sanskrit: "न तस्य रोदसी उभे न यातो अन्तं आपतुः",
-                    transliteration: "na tasya rodasī ubhe na yāto antaṃ āpatuḥ",
-                    translation: "Not even these two world-halves have attained his end nor reached the limit of his might",
-                    deity: "Soma",
-                    rishi: "Kaṇva Ghaura"
-                },
-                "9.1.1": {
-                    sanskrit: "अयं सुतो मधुमतीर्अपो वसान इन्दवे",
-                    transliteration: "ayaṃ suto madhumatīr apo vasāna indave",
-                    translation: "This juice that wears the sweetest raiment for Indra",
-                    deity: "Soma Pavamana",
-                    rishi: "Madhuchhandas Vaiśvāmitra"
-                },
-                "9.67.1": {
-                    sanskrit: "पवस्व वाजसातमः सोम द्रोणान्यापयः",
-                    transliteration: "pavasva vājasātamaḥ soma droṇāny āpayaḥ",
-                    translation: "Flow on, most excellent giver of strength, O Soma, filling the wooden vats",
-                    deity: "Soma Pavamana",
-                    rishi: "Pavamāna Kāśyapa"
-                },
-                "10.1.1": {
-                    sanskrit: "गायत्रं त्रैष्टुभं जागतं अनुष्टुभमार्चत",
-                    transliteration: "gāyatraṃ traiṣṭubhaṃ jāgataṃ anuṣṭubham ārchata",
-                    translation: "The Gayatri, Trishtup, Jagati, and Anushtup metres",
-                    deity: "Agni",
-                    rishi: "Trita Āptya"
-                },
-                "10.90.1": {
-                    sanskrit: "सहस्रशीर्षा पुरुषः सहस्राक्षः सहस्रपात्",
-                    transliteration: "sahasraśīrṣā puruṣaḥ sahasrākṣaḥ sahasrapāt",
-                    translation: "The Purusha has a thousand heads, a thousand eyes, a thousand feet",
-                    deity: "Purusha",
-                    rishi: "Nārāyaṇa"
-                },
-                "10.129.1": {
-                    sanskrit: "नासदासीन्नो सदासीत्तदानीं नासीद्रजो नो व्योमा परो यत्",
-                    transliteration: "nāsad āsīn no sad āsīt tadānīṃ nāsīd rajo no vyomā paro yat",
-                    translation: "Then was not non-existent nor existent: there was no realm of air, no sky beyond it",
-                    deity: "Creation",
-                    rishi: "Prajāpati Parameṣṭhin"
-                },
-                "10.191.2": {
-                    sanskrit: "समानी व आकूतिः समाना हृदयानि वः",
-                    transliteration: "samānī va ākūtiḥ samānā hṛdayāni vaḥ",
-                    translation: "United be your purpose, harmonious be your feelings, united be your hearts",
-                    deity: "Harmony",
-                    rishi: "Saṃvanana Āṅgirasa"
-                }
-            };
-            
-            /* 
-             * TO LOAD MORE MANTRAS:
-             * 
-             * 1. Download Griffith translation from: https://archive.org/details/rigvedacomplete
-             * 2. Or get structured data from: http://www.sanskritweb.net/rigveda/
-             * 3. Or use the Sanskrit Documents site: https://sanskritdocuments.org/
-             * 
-             * Format mantras as:
-             * "MANDALA.SUKTA.VERSE": {
-             *     sanskrit: "देवनागरी text",
-             *     transliteration: "IAST romanized text",
-             *     translation: "English translation",
-             *     deity: "Deity name",
-             *     rishi: "Composer name"
-             * }
-             * 
-             * You can also load from external JSON file:
-             * fetch('rigveda-mantras.json')
-             *   .then(response => response.json())
-             *   .then(data => Object.assign(sampleMantras, data));
-             */
-            
-            // Rig Veda data structure - Mandala and their Sukta counts
-            const rigVedaData = [
-                { mandala: 1, suktas: 191, deity: "Agni, Indra", theme: "Invocations", rishi: "Various Rishis" },
-                { mandala: 2, suktas: 43, deity: "Agni", theme: "Gratitude", rishi: "Gṛtsamada family" },
-                { mandala: 3, suktas: 62, deity: "Agni, Indra", theme: "Morning hymns", rishi: "Viśvāmitra family" },
-                { mandala: 4, suktas: 58, deity: "Agni, Indra", theme: "Prayers", rishi: "Vāmadeva family" },
-                { mandala: 5, suktas: 87, deity: "Agni, Indra", theme: "Cosmic order", rishi: "Atri family" },
-                { mandala: 6, suktas: 75, deity: "Agni, Indra", theme: "Sacred fire", rishi: "Bharadvāja family" },
-                { mandala: 7, suktas: 104, deity: "Agni, Varuna", theme: "Waters", rishi: "Vasiṣṭha family" },
-                { mandala: 8, suktas: 103, deity: "Indra", theme: "Soma", rishi: "Kaṇva family" },
-                { mandala: 9, suktas: 114, deity: "Soma Pavamana", theme: "Purification", rishi: "Various Rishis" },
-                { mandala: 10, suktas: 191, deity: "Various", theme: "Philosophy", rishi: "Various Rishis" }
-            ];
-            
-            // Color palette for mandalas
-            const mandalaColors = [
-                0xff6b6b, 0xff8787, 0x4ecdc4, 0x45b7d1,
-                0x95e1d3, 0x38ada9, 0xf38181, 0xffeaa7,
-                0xaa96da, 0xa29bfe
-            ];
-            
-            // Scene setup
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);
-            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setClearColor(0x000000, 1);
-            document.getElementById('canvas-container').appendChild(renderer.domElement);
-            
-            // CSS2D Renderer for labels
-            const labelRenderer = document.createElement('div');
-            labelRenderer.style.position = 'absolute';
-            labelRenderer.style.top = '0px';
-            labelRenderer.style.pointerEvents = 'none';
-            labelRenderer.style.width = '100%';
-            labelRenderer.style.height = '100%';
-            document.getElementById('canvas-container').appendChild(labelRenderer);
-            
-            // Lighting
-            const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
-            scene.add(ambientLight);
-            
-            const pointLight = new THREE.PointLight(0xffffff, 1.5, 1000);
-            pointLight.position.set(0, 0, 0);
-            scene.add(pointLight);
-            
-            // Create starfield
-            function createStarfield() {
-                const geometry = new THREE.BufferGeometry();
-                const vertices = [];
-                
-                for (let i = 0; i < 3000; i++) {
-                    const x = (Math.random() - 0.5) * 2000;
-                    const y = (Math.random() - 0.5) * 2000;
-                    const z = (Math.random() - 0.5) * 2000;
-                    vertices.push(x, y, z);
-                }
-                
-                geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-                const material = new THREE.PointsMaterial({ color: 0xffffff, size: 1 });
-                const stars = new THREE.Points(geometry, material);
-                scene.add(stars);
+        // ==============================================
+        // CONFIGURATION
+        // ==============================================
+        const CONFIG = {
+            CAMERA: {
+                DEFAULT_DISTANCE: 300,
+                MIN_DISTANCE: 100,
+                MAX_DISTANCE: 800,
+                FOV: 60,
+                DEFAULT_ROTATION: { x: 0, y: 0 }
+            },
+            PLANETS: {
+                BASE_ORBIT_RADIUS: 40,
+                ORBIT_SPACING: 25,
+                BASE_SIZE: 3,
+                SIZE_MULTIPLIER: 30
+            },
+            STARS: {
+                COUNT_DESKTOP: 3000,
+                COUNT_MOBILE: 1000,
+                SPREAD: 2000
+            },
+            ANIMATION: {
+                BASE_ORBIT_SPEED: 0.0005,
+                ORBIT_SPEED_INCREMENT: 0.0001,
+                SUN_ROTATION_SPEED: 0.001,
+                PLANET_ROTATION_SPEED: 0.005,
+                AUTO_ROTATE_SPEED: 0.002
+            },
+            SEARCH: {
+                DEBOUNCE_MS: 300,
+                PULSE_SPEED: 2,
+                FUZZY_THRESHOLD: 0.7
+            },
+            PERFORMANCE: {
+                LABEL_UPDATE_INTERVAL: 5,
+                RAYCAST_MAX_DISTANCE: 500
+            },
+            AUDIO: {
+                DEFAULT_VOLUME: 0.7,
+                HOVER_THROTTLE_MS: 150
             }
-            createStarfield();
-            
-            // Create central sun (source of knowledge)
-            const sunGeometry = new THREE.SphereGeometry(15, 32, 32);
-            const sunMaterial = new THREE.MeshBasicMaterial({ 
-                color: 0xffa500
-            });
-            const sun = new THREE.Mesh(sunGeometry, sunMaterial);
-            scene.add(sun);
-            
-            // Sun glow
-            const glowGeometry = new THREE.SphereGeometry(18, 32, 32);
-            const glowMaterial = new THREE.MeshBasicMaterial({
-                color: 0xffa500,
-                transparent: true,
-                opacity: 0.3
-            });
-            const sunGlow = new THREE.Mesh(glowGeometry, glowMaterial);
-            scene.add(sunGlow);
-            
-            // Store all clickable objects
-            const clickableObjects = [];
-            const planets = [];
-            const planetLabels = []; // For CSS2D labels
-            
-            // Navigation state
-            let autoRotateEnabled = false;
-            let autoRotateSpeed = 0.002;
-            const defaultCameraRotation = { x: 0, y: 0 };
-            const defaultCameraDistance = 300;
-            
-            // Search state
-            let searchActive = false;
-            let matchingObjects = new Set();
-            
-            // Search function
-            function performSearch(query) {
-                const lowerQuery = query.toLowerCase().trim();
-                
-                if (!lowerQuery) {
-                    // Clear search
-                    searchActive = false;
-                    matchingObjects.clear();
-                    resetObjectOpacity();
-                    document.getElementById('search-results').textContent = '';
-                    document.getElementById('clear-search').disabled = true;
-                    return;
+        };
+
+        // Detect mobile device
+        const isMobile = /Android|webOS|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const starCount = isMobile ? CONFIG.STARS.COUNT_MOBILE : CONFIG.STARS.COUNT_DESKTOP;
+
+        // ==============================================
+        // WEBGL COMPATIBILITY CHECK
+        // ==============================================
+        function checkWebGLSupport() {
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                return !!gl;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        if (!checkWebGLSupport()) {
+            document.getElementById('loading').innerHTML = `
+                <h2 style="color: #ff6b6b;">WebGL Not Supported</h2>
+                <p>Your browser doesn't support WebGL, which is required for this visualization.</p>
+                <p>Please try using a modern browser like Chrome, Firefox, or Edge.</p>
+            `;
+            throw new Error('WebGL not supported');
+        }
+
+        // ==============================================
+        // DATA
+        // ==============================================
+        const sampleMantras = {
+            "1.1.1": {
+                sanskrit: "अग्निमीळे पुरोहितं यज्ञस्य देवमृत्विजम्",
+                transliteration: "agnim īḷe purohitaṃ yajñasya devam ṛtvijam",
+                translation: "I praise Agni, the chosen Priest, God, minister of sacrifice",
+                deity: "Agni",
+                rishi: "Madhuchhandas Vaiśvāmitra"
+            },
+            "1.1.2": {
+                sanskrit: "होतारं रत्नधातमम्",
+                transliteration: "hotāraṃ ratnadhātamam",
+                translation: "The invoker, lavishest of wealth",
+                deity: "Agni",
+                rishi: "Madhuchhandas Vaiśvāmitra"
+            },
+            "1.25.1": {
+                sanskrit: "कद्रुश्चिदस्य वर्णस्य पर्येति स्पशो यथा",
+                transliteration: "kad ruś cid asya varṇasya pary eti spaśo yathā",
+                translation: "What thing I truly am I know not clearly: mysterious, fettered in my mind I wander",
+                deity: "Varuna",
+                rishi: "Śunahśepa Ājīgarti"
+            },
+            "1.32.1": {
+                sanskrit: "इन्द्रस्य नु वीर्याणि प्र वोचं यानि चकार प्रथमानि वज्री",
+                transliteration: "indrasya nu vīryāṇi pra vocaṃ yāni cakāra prathamāni vajrī",
+                translation: "I will declare the manly deeds of Indra, the first that he achieved, the Thunder-wielder",
+                deity: "Indra",
+                rishi: "Hiraṇyastūpa Āṅgirasa"
+            },
+            "1.50.1": {
+                sanskrit: "उदुत्यं जातवेदसं देवं वहन्ति केतवः",
+                transliteration: "ud u tyaṃ jātavedasaṃ devaṃ vahanti ketavaḥ",
+                translation: "His beams bear up that God who knows all life, Sūrya, that all may look on him",
+                deity: "Sūrya",
+                rishi: "Praskaṇva Kāṇva"
+            },
+            "1.154.1": {
+                sanskrit: "विष्णोर्नु कं वीर्याणि प्र वोचं यः पार्थिवानि विममे रजांसि",
+                transliteration: "viṣṇor nu kaṃ vīryāṇi pra vocaṃ yaḥ pārthivāni vimame rajāṃsi",
+                translation: "I will declare the mighty deeds of Vishnu, who has measured out the earthly regions",
+                deity: "Vishnu",
+                rishi: "Dīrghatamas Aucathya"
+            },
+            "2.1.1": {
+                sanskrit: "त्वमग्ने द्युभिस्त्वमाशुशुक्षणिस्त्वमद्भ्यस्त्वमश्मनस्परि",
+                transliteration: "tvam agne dyubhis tvam āśuśukṣaṇis tvam adbhyas tvam aśmanas pari",
+                translation: "Thou, Agni, shining in thy glory through the days, art brought to life from out the waters",
+                deity: "Agni",
+                rishi: "Gṛtsamada Bhārgava Śaunaka"
+            },
+            "2.12.1": {
+                sanskrit: "यो जात एव प्रथमो मनस्वान्देवो देवान्क्रतुना पर्यभूषत्",
+                transliteration: "yo jāta eva prathamo manasvān devo devān kratunā pary abhūṣat",
+                translation: "He who, just born, chief God of lofty spirit by power and might became the Gods' protector",
+                deity: "Indra",
+                rishi: "Gṛtsamada Bhārgava Śaunaka"
+            },
+            "3.1.1": {
+                sanskrit: "प्र वो महे सुभरणाय शूषं स्तोममृक्वभ्यो अर्हणाय तक्षम",
+                transliteration: "pra vo mahe subharaṇāya śūṣaṃ stomam ṛkvabhyo arhaṇāya takṣam",
+                translation: "I send my voice as herald to the Rik singers, I, Rishi's son, chief of the glorious kinsmen",
+                deity: "Agni",
+                rishi: "Viśvāmitra Gāthina"
+            },
+            "3.62.10": {
+                sanskrit: "तत्सवितुर्वरेण्यं भर्गो देवस्य धीमहि",
+                transliteration: "tat savitur vareṇyaṃ bhargo devasya dhīmahi",
+                translation: "May we attain that excellent glory of Savitar the god",
+                deity: "Savitar",
+                rishi: "Viśvāmitra Gāthina"
+            },
+            "4.1.1": {
+                sanskrit: "वर्धा यजस्व रयिमिन्द्रियाय सुषूदतीमुषसं देवयन्तीम्",
+                transliteration: "vardhā yajasva rayim indriyāya suṣūdatīm uṣasaṃ devayantīm",
+                translation: "Offer worship with oblations to the Bright One, the Singer, with the singers magnify him",
+                deity: "Agni",
+                rishi: "Vāmadeva Gautama"
+            },
+            "4.26.1": {
+                sanskrit: "अहं मनुरभवं सूर्यश्च",
+                transliteration: "ahaṃ manur abhavaṃ sūryaś ca",
+                translation: "I was Manu and the Sun",
+                deity: "Indra",
+                rishi: "Vāmadeva Gautama"
+            },
+            "5.1.1": {
+                sanskrit: "प्रातर्जितं भरत सन्तमग्निं धियो हिनोत यज्ञियाय",
+                transliteration: "prātar jitaṃ bharata santam agniṃ dhiyo hinota yajñiyāya",
+                translation: "Produce thy stream of flames like a Rishi bearing his sacred words",
+                deity: "Agni",
+                rishi: "Budha Ātreya"
+            },
+            "5.85.7": {
+                sanskrit: "नाहं तं मर्त्यमाधृषेयमो यस्य पुरुष्ट्रा न वरन्ते सख्यम्",
+                transliteration: "nāhaṃ taṃ martyam ādhṛṣeyam o yasya puruṣṭrā na varante sakhyam",
+                translation: "I would not dare to harm that mortal man whose friendship the Generous Maruts value highly",
+                deity: "Parjanya",
+                rishi: "Prayoga Ātreya"
+            },
+            "6.1.1": {
+                sanskrit: "अग्निं वो देवमध्वरे होतारं सत्यतातिम्",
+                transliteration: "agniṃ vo devam adhvare hotāraṃ satyatātim",
+                translation: "Agni the True, to worship and to serve with sacrifice, as the best Priest",
+                deity: "Agni",
+                rishi: "Bharadvāja Bārhaspatya"
+            },
+            "6.9.1": {
+                sanskrit: "उभा ते अग्ने अजरे पुरूणि सन्ति धामानि वन्दिमा",
+                transliteration: "ubhā te agne ajare purūṇi santi dhāmāni vandimā",
+                translation: "Both thy two places, Agni, unaging, where thou dwellest, we praise",
+                deity: "Agni",
+                rishi: "Bharadvāja Bārhaspatya"
+            },
+            "7.1.1": {
+                sanskrit: "प्रति ष्मा सु मतयो युयुक्षन्नग्ने विश्वानि हव्या जुहोत",
+                transliteration: "prati ṣmā su matayo yuyukṣann agne viśvāni havyā juhota",
+                translation: "The singers hymn thee, they who chant the psalm, and eagerly, with every hymn",
+                deity: "Agni",
+                rishi: "Vasiṣṭha Maitrāvaruṇi"
+            },
+            "7.49.1": {
+                sanskrit: "अपां नपात्पृथिवी द्यौरुत त्वम्",
+                transliteration: "apāṃ napāt pṛthivī dyaur uta tvam",
+                translation: "Son of Waters, Earth and Heaven aid thee",
+                deity: "Waters",
+                rishi: "Vasiṣṭha Maitrāvaruṇi"
+            },
+            "7.86.1": {
+                sanskrit: "बोध्यग्रे वरुणं यज्ञैरिहाव्ये हव्यैर्ये",
+                transliteration: "bodhy agre varuṇaṃ yajñair ihāvye havyair ye",
+                translation: "Sing forth to Varuna with worship and with hymns",
+                deity: "Varuna",
+                rishi: "Vasiṣṭha Maitrāvaruṇi"
+            },
+            "8.1.1": {
+                sanskrit: "इन्द्रमिद्गाथिनो बृहदिन्द्रमर्केभिरर्किणः",
+                transliteration: "indram id gāthino bṛhad indram arkebhir arkiṇaḥ",
+                translation: "They who stand round him as he moves harness the bright, the ruddy Steed",
+                deity: "Indra",
+                rishi: "Kaṇva Ghaura"
+            },
+            "8.48.3": {
+                sanskrit: "न तस्य रोदसी उभे न यातो अन्तं आपतुः",
+                transliteration: "na tasya rodasī ubhe na yāto antaṃ āpatuḥ",
+                translation: "Not even these two world-halves have attained his end nor reached the limit of his might",
+                deity: "Soma",
+                rishi: "Kaṇva Ghaura"
+            },
+            "9.1.1": {
+                sanskrit: "अयं सुतो मधुमतीर्अपो वसान इन्दवे",
+                transliteration: "ayaṃ suto madhumatīr apo vasāna indave",
+                translation: "This juice that wears the sweetest raiment for Indra",
+                deity: "Soma Pavamana",
+                rishi: "Madhuchhandas Vaiśvāmitra"
+            },
+            "9.67.1": {
+                sanskrit: "पवस्व वाजसातमः सोम द्रोणान्यापयः",
+                transliteration: "pavasva vājasātamaḥ soma droṇāny āpayaḥ",
+                translation: "Flow on, most excellent giver of strength, O Soma, filling the wooden vats",
+                deity: "Soma Pavamana",
+                rishi: "Pavamāna Kāśyapa"
+            },
+            "10.1.1": {
+                sanskrit: "गायत्रं त्रैष्टुभं जागतं अनुष्टुभमार्चत",
+                transliteration: "gāyatraṃ traiṣṭubhaṃ jāgataṃ anuṣṭubham ārchata",
+                translation: "The Gayatri, Trishtup, Jagati, and Anushtup metres",
+                deity: "Agni",
+                rishi: "Trita Āptya"
+            },
+            "10.90.1": {
+                sanskrit: "सहस्रशीर्षा पुरुषः सहस्राक्षः सहस्रपात्",
+                transliteration: "sahasraśīrṣā puruṣaḥ sahasrākṣaḥ sahasrapāt",
+                translation: "The Purusha has a thousand heads, a thousand eyes, a thousand feet",
+                deity: "Purusha",
+                rishi: "Nārāyaṇa"
+            },
+            "10.129.1": {
+                sanskrit: "नासदासीन्नो सदासीत्तदानीं नासीद्रजो नो व्योमा परो यत्",
+                transliteration: "nāsad āsīn no sad āsīt tadānīṃ nāsīd rajo no vyomā paro yat",
+                translation: "Then was not non-existent nor existent: there was no realm of air, no sky beyond it",
+                deity: "Creation",
+                rishi: "Prajāpati Parameṣṭhin"
+            },
+            "10.191.2": {
+                sanskrit: "समानी व आकूतिः समाना हृदयानि वः",
+                transliteration: "samānī va ākūtiḥ samānā hṛdayāni vaḥ",
+                translation: "United be your purpose, harmonious be your feelings, united be your hearts",
+                deity: "Harmony",
+                rishi: "Saṃvanana Āṅgirasa"
+            }
+        };
+
+        const rigVedaData = [
+            { mandala: 1, suktas: 191, deity: "Agni, Indra", theme: "Invocations", rishi: "Various Rishis" },
+            { mandala: 2, suktas: 43, deity: "Agni", theme: "Gratitude", rishi: "Gṛtsamada family" },
+            { mandala: 3, suktas: 62, deity: "Agni, Indra", theme: "Morning hymns", rishi: "Viśvāmitra family" },
+            { mandala: 4, suktas: 58, deity: "Agni, Indra", theme: "Prayers", rishi: "Vāmadeva family" },
+            { mandala: 5, suktas: 87, deity: "Agni, Indra", theme: "Cosmic order", rishi: "Atri family" },
+            { mandala: 6, suktas: 75, deity: "Agni, Indra", theme: "Sacred fire", rishi: "Bharadvāja family" },
+            { mandala: 7, suktas: 104, deity: "Agni, Varuna", theme: "Waters", rishi: "Vasiṣṭha family" },
+            { mandala: 8, suktas: 103, deity: "Indra", theme: "Soma", rishi: "Kaṇva family" },
+            { mandala: 9, suktas: 114, deity: "Soma Pavamana", theme: "Purification", rishi: "Various Rishis" },
+            { mandala: 10, suktas: 191, deity: "Various", theme: "Philosophy", rishi: "Various Rishis" }
+        ];
+
+        const mandalaColors = [
+            0xff6b6b, 0xff8787, 0x4ecdc4, 0x45b7d1,
+            0x95e1d3, 0x38ada9, 0xf38181, 0xffeaa7,
+            0xaa96da, 0xa29bfe
+        ];
+
+        // ==============================================
+        // PREFERENCES MANAGEMENT
+        // ==============================================
+        const preferences = {
+            load() {
+                try {
+                    const saved = localStorage.getItem('rigveda-preferences');
+                    if (saved) {
+                        const prefs = JSON.parse(saved);
+                        return {
+                            clickSounds: prefs.clickSounds ?? true,
+                            hoverSounds: prefs.hoverSounds ?? true,
+                            volume: prefs.volume ?? CONFIG.AUDIO.DEFAULT_VOLUME,
+                            music: prefs.music ?? false
+                        };
+                    }
+                } catch (e) {
+                    console.warn('Could not load preferences:', e);
                 }
-                
-                searchActive = true;
+                return {
+                    clickSounds: true,
+                    hoverSounds: true,
+                    volume: CONFIG.AUDIO.DEFAULT_VOLUME,
+                    music: false
+                };
+            },
+            save(prefs) {
+                try {
+                    localStorage.setItem('rigveda-preferences', JSON.stringify(prefs));
+                } catch (e) {
+                    console.warn('Could not save preferences:', e);
+                }
+            }
+        };
+
+        // ==============================================
+        // AUDIO SYSTEM
+        // ==============================================
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioContext = new AudioContext();
+        let audioInitialized = false;
+
+        const savedPrefs = preferences.load();
+        let clickSoundsEnabled = savedPrefs.clickSounds;
+        let hoverSoundsEnabled = savedPrefs.hoverSounds;
+        let musicEnabled = savedPrefs.music;
+        let masterVolume = savedPrefs.volume;
+
+        let musicOscillator = null;
+        let musicGainNode = null;
+        let lastHoverTime = 0;
+
+        function initAudioContext() {
+            if (!audioInitialized && audioContext.state === 'suspended') {
+                audioContext.resume().then(() => {
+                    audioInitialized = true;
+                    console.log('Audio initialized');
+                });
+            }
+        }
+
+        document.body.addEventListener('click', initAudioContext, { once: true });
+
+        function playClickSound(type = 'planet') {
+            if (!clickSoundsEnabled) return;
+            initAudioContext();
+
+            const now = audioContext.currentTime;
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            if (type === 'planet') {
+                oscillator.frequency.setValueAtTime(440, now);
+                oscillator.frequency.exponentialRampToValueAtTime(220, now + 0.1);
+                gainNode.gain.setValueAtTime(masterVolume * 0.3, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            } else if (type === 'moon') {
+                oscillator.frequency.setValueAtTime(880, now);
+                oscillator.frequency.exponentialRampToValueAtTime(440, now + 0.15);
+                gainNode.gain.setValueAtTime(masterVolume * 0.2, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+            } else if (type === 'sun') {
+                oscillator.frequency.setValueAtTime(110, now);
+                oscillator.frequency.exponentialRampToValueAtTime(55, now + 0.2);
+                gainNode.gain.setValueAtTime(masterVolume * 0.4, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+            }
+
+            oscillator.type = 'sine';
+            oscillator.start(now);
+            oscillator.stop(now + 0.8);
+        }
+
+        function playHoverSound() {
+            if (!hoverSoundsEnabled) return;
+            initAudioContext();
+
+            const now = audioContext.currentTime;
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.setValueAtTime(1200, now);
+            oscillator.frequency.exponentialRampToValueAtTime(1400, now + 0.05);
+            gainNode.gain.setValueAtTime(masterVolume * 0.05, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+
+            oscillator.type = 'sine';
+            oscillator.start(now);
+            oscillator.stop(now + 0.1);
+        }
+
+        function startBackgroundMusic() {
+            if (musicOscillator) return;
+
+            musicOscillator = audioContext.createOscillator();
+            musicGainNode = audioContext.createGain();
+
+            const filter = audioContext.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 800;
+
+            musicOscillator.connect(filter);
+            filter.connect(musicGainNode);
+            musicGainNode.connect(audioContext.destination);
+
+            musicOscillator.frequency.value = 220;
+            musicOscillator.type = 'sine';
+
+            musicGainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            musicGainNode.gain.linearRampToValueAtTime(masterVolume * 0.15, audioContext.currentTime + 2);
+
+            musicOscillator.start();
+        }
+
+        function stopBackgroundMusic() {
+            if (!musicOscillator) return;
+
+            musicGainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 1);
+            setTimeout(() => {
+                if (musicOscillator) {
+                    musicOscillator.stop();
+                    musicOscillator = null;
+                    musicGainNode = null;
+                }
+            }, 1000);
+        }
+
+        function updateMusicVolume() {
+            if (musicGainNode && musicEnabled) {
+                musicGainNode.gain.linearRampToValueAtTime(
+                    masterVolume * 0.15,
+                    audioContext.currentTime + 0.1
+                );
+            }
+        }
+
+        function saveAudioPrefs() {
+            preferences.save({
+                clickSounds: clickSoundsEnabled,
+                hoverSounds: hoverSoundsEnabled,
+                volume: masterVolume,
+                music: musicEnabled
+            });
+        }
+
+        // ==============================================
+        // SEARCH UTILITIES
+        // ==============================================
+        function fuzzyMatch(text, query) {
+            const textLower = text.toLowerCase();
+            const queryLower = query.toLowerCase();
+
+            if (textLower.includes(queryLower)) return 2;
+
+            let matchCount = 0;
+            let queryIndex = 0;
+
+            for (let i = 0; i < textLower.length && queryIndex < queryLower.length; i++) {
+                if (textLower[i] === queryLower[queryIndex]) {
+                    matchCount++;
+                    queryIndex++;
+                }
+            }
+
+            return matchCount / queryLower.length;
+        }
+
+        // ==============================================
+        // THREE.JS SCENE SETUP
+        // ==============================================
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(
+            CONFIG.CAMERA.FOV,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            10000
+        );
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000000, 1);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const labelRenderer = document.createElement('div');
+        labelRenderer.style.position = 'absolute';
+        labelRenderer.style.top = '0px';
+        labelRenderer.style.pointerEvents = 'none';
+        labelRenderer.style.width = '100%';
+        labelRenderer.style.height = '100%';
+        document.getElementById('canvas-container').appendChild(labelRenderer);
+
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+        scene.add(ambientLight);
+
+        const pointLight = new THREE.PointLight(0xffffff, 1.5, 1000);
+        pointLight.position.set(0, 0, 0);
+        scene.add(pointLight);
+
+        // ==============================================
+        // CREATE SCENE OBJECTS
+        // ==============================================
+        function createStarfield() {
+            const geometry = new THREE.BufferGeometry();
+            const vertices = [];
+
+            for (let i = 0; i < starCount; i++) {
+                const x = (Math.random() - 0.5) * CONFIG.STARS.SPREAD;
+                const y = (Math.random() - 0.5) * CONFIG.STARS.SPREAD;
+                const z = (Math.random() - 0.5) * CONFIG.STARS.SPREAD;
+                vertices.push(x, y, z);
+            }
+
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            const material = new THREE.PointsMaterial({ color: 0xffffff, size: 1 });
+            const stars = new THREE.Points(geometry, material);
+            scene.add(stars);
+        }
+        createStarfield();
+
+        const sunGeometry = new THREE.SphereGeometry(15, 32, 32);
+        const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffa500 });
+        const sun = new THREE.Mesh(sunGeometry, sunMaterial);
+        scene.add(sun);
+
+        const glowGeometry = new THREE.SphereGeometry(18, 32, 32);
+        const glowMaterial = new THREE.MeshBasicMaterial({
+            color: 0xffa500,
+            transparent: true,
+            opacity: 0.3
+        });
+        const sunGlow = new THREE.Mesh(glowGeometry, glowMaterial);
+        scene.add(sunGlow);
+
+        const clickableObjects = [];
+        const planets = [];
+        const planetLabels = [];
+
+        let autoRotateEnabled = false;
+        let searchActive = false;
+        let matchingObjects = new Set();
+
+        // ==============================================
+        // SEARCH FUNCTIONALITY
+        // ==============================================
+        let searchTimeout;
+
+        function performSearch(query) {
+            const lowerQuery = query.toLowerCase().trim();
+
+            if (!lowerQuery) {
+                searchActive = false;
                 matchingObjects.clear();
-                document.getElementById('clear-search').disabled = false;
-                
-                let matchCount = 0;
-                
-                // Search through mantras
-                Object.keys(sampleMantras).forEach(key => {
-                    const mantra = sampleMantras[key];
-                    const mandalaNum = parseInt(key.split('.')[0]);
-                    
-                    // Check if mantra matches search
-                    const matches = 
-                        mantra.translation.toLowerCase().includes(lowerQuery) ||
-                        mantra.deity.toLowerCase().includes(lowerQuery) ||
-                        mantra.rishi.toLowerCase().includes(lowerQuery) ||
-                        mantra.sanskrit.includes(lowerQuery) ||
-                        mantra.transliteration.toLowerCase().includes(lowerQuery);
-                    
-                    if (matches) {
-                        matchCount++;
-                        // Find and mark matching objects
-                        clickableObjects.forEach(obj => {
-                            if (obj.userData.mandala === mandalaNum) {
-                                matchingObjects.add(obj);
-                            }
-                        });
-                    }
-                });
-                
-                // Search through Mandala themes and deities
-                rigVedaData.forEach((mandalaData, index) => {
-                    const matches = 
-                        mandalaData.deity.toLowerCase().includes(lowerQuery) ||
-                        mandalaData.theme.toLowerCase().includes(lowerQuery) ||
-                        mandalaData.rishi.toLowerCase().includes(lowerQuery) ||
-                        `mandala ${mandalaData.mandala}`.includes(lowerQuery);
-                    
-                    if (matches) {
-                        clickableObjects.forEach(obj => {
-                            if (obj.userData.mandala === mandalaData.mandala) {
-                                matchingObjects.add(obj);
-                                matchCount++;
-                            }
-                        });
-                    }
-                });
-                
-                // Update visual feedback
-                updateSearchVisuals();
-                
-                // Update results text
-                const resultsText = matchCount > 0 
-                    ? `✨ Found ${matchCount} matching ${matchCount === 1 ? 'result' : 'results'}` 
-                    : '❌ No results found';
-                document.getElementById('search-results').textContent = resultsText;
+                resetObjectOpacity();
+                document.getElementById('search-results').textContent = '';
+                document.getElementById('clear-search').disabled = true;
+                return;
             }
-            
-            function updateSearchVisuals() {
-                clickableObjects.forEach(obj => {
-                    if (matchingObjects.has(obj)) {
-                        // Highlight matching objects
-                        obj.material.emissiveIntensity = 0.8;
-                        obj.material.opacity = 1;
-                        obj.material.transparent = false;
-                    } else {
-                        // Dim non-matching objects
-                        obj.material.emissiveIntensity = 0.1;
-                        obj.material.opacity = 0.3;
-                        obj.material.transparent = true;
-                    }
-                });
-            }
-            
-            function resetObjectOpacity() {
-                clickableObjects.forEach(obj => {
+
+            searchActive = true;
+            matchingObjects.clear();
+            document.getElementById('clear-search').disabled = false;
+
+            let matchCount = 0;
+
+            Object.keys(sampleMantras).forEach(key => {
+                const mantra = sampleMantras[key];
+                const mandalaNum = parseInt(key.split('.')[0]);
+
+                const matches =
+                    fuzzyMatch(mantra.translation, lowerQuery) > CONFIG.SEARCH.FUZZY_THRESHOLD ||
+                    fuzzyMatch(mantra.deity, lowerQuery) > CONFIG.SEARCH.FUZZY_THRESHOLD ||
+                    fuzzyMatch(mantra.rishi, lowerQuery) > CONFIG.SEARCH.FUZZY_THRESHOLD ||
+                    mantra.sanskrit.includes(lowerQuery) ||
+                    fuzzyMatch(mantra.transliteration, lowerQuery) > CONFIG.SEARCH.FUZZY_THRESHOLD;
+
+                if (matches) {
+                    matchCount++;
+                    clickableObjects.forEach(obj => {
+                        if (obj.userData.mandala === mandalaNum) {
+                            matchingObjects.add(obj);
+                        }
+                    });
+                }
+            });
+
+            rigVedaData.forEach((mandalaData) => {
+                const matches =
+                    fuzzyMatch(mandalaData.deity, lowerQuery) > CONFIG.SEARCH.FUZZY_THRESHOLD ||
+                    fuzzyMatch(mandalaData.theme, lowerQuery) > CONFIG.SEARCH.FUZZY_THRESHOLD ||
+                    fuzzyMatch(mandalaData.rishi, lowerQuery) > CONFIG.SEARCH.FUZZY_THRESHOLD ||
+                    `mandala ${mandalaData.mandala}`.includes(lowerQuery);
+
+                if (matches) {
+                    clickableObjects.forEach(obj => {
+                        if (obj.userData.mandala === mandalaData.mandala) {
+                            matchingObjects.add(obj);
+                            matchCount++;
+                        }
+                    });
+                }
+            });
+
+            updateSearchVisuals();
+
+            const resultsText = matchCount > 0
+                ? `Found ${matchCount} matching ${matchCount === 1 ? 'result' : 'results'}`
+                : 'No results found';
+            document.getElementById('search-results').textContent = resultsText;
+        }
+
+        function updateSearchVisuals() {
+            clickableObjects.forEach(obj => {
+                if (matchingObjects.has(obj)) {
+                    obj.material.emissiveIntensity = 0.8;
                     obj.material.opacity = 1;
                     obj.material.transparent = false;
-                    if (obj.userData.type === 'planet') {
-                        obj.material.emissiveIntensity = 0.3;
-                    } else {
-                        obj.material.emissiveIntensity = 0.2;
-                    }
-                });
-            }
-            
-            // Search event listeners
-            const searchBox = document.getElementById('search-box');
-            const clearButton = document.getElementById('clear-search');
-            
-            searchBox.addEventListener('input', (e) => {
-                performSearch(e.target.value);
+                } else {
+                    obj.material.emissiveIntensity = 0.1;
+                    obj.material.opacity = 0.3;
+                    obj.material.transparent = true;
+                }
             });
-            
-            clearButton.addEventListener('click', () => {
+        }
+
+        function resetObjectOpacity() {
+            clickableObjects.forEach(obj => {
+                obj.material.opacity = 1;
+                obj.material.transparent = false;
+                if (obj.userData.type === 'planet') {
+                    obj.material.emissiveIntensity = 0.3;
+                } else {
+                    obj.material.emissiveIntensity = 0.2;
+                }
+            });
+        }
+
+        // ==============================================
+        // EVENT LISTENERS
+        // ==============================================
+        const searchBox = document.getElementById('search-box');
+        const clearButton = document.getElementById('clear-search');
+
+        searchBox.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                performSearch(e.target.value);
+            }, CONFIG.SEARCH.DEBOUNCE_MS);
+        });
+
+        clearButton.addEventListener('click', () => {
+            searchBox.value = '';
+            performSearch('');
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                e.preventDefault();
+                searchBox.focus();
+            }
+            if (e.key === 'Escape' && searchActive) {
                 searchBox.value = '';
                 performSearch('');
-            });
-            
-            // Keyboard shortcut: Ctrl+F or Cmd+F to focus search
-            window.addEventListener('keydown', (e) => {
-                if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-                    e.preventDefault();
-                    searchBox.focus();
-                }
-                // Escape to clear search
-                if (e.key === 'Escape' && searchActive) {
-                    searchBox.value = '';
-                    performSearch('');
-                }
-            });
-            
-            // ============================================
-            // AUDIO SYSTEM
-            // ============================================
-            
-            // Create audio context
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            const audioContext = new AudioContext();
-            
-            // Audio settings
-            let clickSoundsEnabled = true;
-            let hoverSoundsEnabled = true;
-            let musicEnabled = false;
-            let masterVolume = 0.7;
-            
-            // Background music oscillator
-            let musicOscillator = null;
-            let musicGainNode = null;
-            
-            // Sound synthesis functions
-            function playClickSound(type = 'planet') {
-                if (!clickSoundsEnabled) return;
-                
-                const now = audioContext.currentTime;
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                if (type === 'planet') {
-                    // Deeper, resonant sound for planets
-                    oscillator.frequency.setValueAtTime(440, now);
-                    oscillator.frequency.exponentialRampToValueAtTime(220, now + 0.1);
-                    gainNode.gain.setValueAtTime(masterVolume * 0.3, now);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-                } else if (type === 'moon') {
-                    // Higher, bell-like sound for moons
-                    oscillator.frequency.setValueAtTime(880, now);
-                    oscillator.frequency.exponentialRampToValueAtTime(440, now + 0.15);
-                    gainNode.gain.setValueAtTime(masterVolume * 0.2, now);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
-                } else if (type === 'sun') {
-                    // Deep gong sound for sun
-                    oscillator.frequency.setValueAtTime(110, now);
-                    oscillator.frequency.exponentialRampToValueAtTime(55, now + 0.2);
-                    gainNode.gain.setValueAtTime(masterVolume * 0.4, now);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
-                }
-                
-                oscillator.type = 'sine';
-                oscillator.start(now);
-                oscillator.stop(now + 0.8);
             }
-            
-            function playHoverSound() {
-                if (!hoverSoundsEnabled) return;
-                
-                const now = audioContext.currentTime;
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                // Soft, subtle hover sound
-                oscillator.frequency.setValueAtTime(1200, now);
-                oscillator.frequency.exponentialRampToValueAtTime(1400, now + 0.05);
-                gainNode.gain.setValueAtTime(masterVolume * 0.05, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                
-                oscillator.type = 'sine';
-                oscillator.start(now);
-                oscillator.stop(now + 0.1);
-            }
-            
-            function startBackgroundMusic() {
-                if (musicOscillator) return; // Already playing
-                
-                // Create ambient drone
-                musicOscillator = audioContext.createOscillator();
-                musicGainNode = audioContext.createGain();
-                
-                const filter = audioContext.createBiquadFilter();
-                filter.type = 'lowpass';
-                filter.frequency.value = 800;
-                
-                musicOscillator.connect(filter);
-                filter.connect(musicGainNode);
-                musicGainNode.connect(audioContext.destination);
-                
-                // Om-like drone (around A note)
-                musicOscillator.frequency.value = 220;
-                musicOscillator.type = 'sine';
-                
-                // Gentle volume
-                musicGainNode.gain.setValueAtTime(0, audioContext.currentTime);
-                musicGainNode.gain.linearRampToValueAtTime(masterVolume * 0.15, audioContext.currentTime + 2);
-                
-                musicOscillator.start();
-            }
-            
-            function stopBackgroundMusic() {
-                if (!musicOscillator) return;
-                
-                musicGainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 1);
-                setTimeout(() => {
-                    if (musicOscillator) {
-                        musicOscillator.stop();
-                        musicOscillator = null;
-                        musicGainNode = null;
-                    }
-                }, 1000);
-            }
-            
-            function updateMusicVolume() {
-                if (musicGainNode && musicEnabled) {
-                    musicGainNode.gain.linearRampToValueAtTime(
-                        masterVolume * 0.15, 
-                        audioContext.currentTime + 0.1
-                    );
-                }
-            }
-            
-            // Audio control event listeners
-            document.getElementById('click-sounds-toggle').addEventListener('change', (e) => {
-                clickSoundsEnabled = e.target.checked;
-                if (clickSoundsEnabled) {
-                    playClickSound('planet'); // Test sound
-                }
-            });
-            
-            document.getElementById('hover-sounds-toggle').addEventListener('change', (e) => {
-                hoverSoundsEnabled = e.target.checked;
-            });
-            
-            document.getElementById('music-toggle').addEventListener('change', (e) => {
-                musicEnabled = e.target.checked;
-                if (musicEnabled) {
-                    // Resume audio context if suspended (browser autoplay policy)
-                    if (audioContext.state === 'suspended') {
-                        audioContext.resume().then(() => {
-                            startBackgroundMusic();
-                        });
-                    } else {
-                        startBackgroundMusic();
-                    }
+        });
+
+        // Audio controls with preferences saving
+        document.getElementById('click-sounds-toggle').checked = clickSoundsEnabled;
+        document.getElementById('hover-sounds-toggle').checked = hoverSoundsEnabled;
+        document.getElementById('music-toggle').checked = musicEnabled;
+        document.getElementById('volume-slider').value = masterVolume * 100;
+        document.getElementById('volume-value').textContent = Math.round(masterVolume * 100) + '%';
+
+        document.getElementById('click-sounds-toggle').addEventListener('change', (e) => {
+            clickSoundsEnabled = e.target.checked;
+            saveAudioPrefs();
+            if (clickSoundsEnabled) playClickSound('planet');
+        });
+
+        document.getElementById('hover-sounds-toggle').addEventListener('change', (e) => {
+            hoverSoundsEnabled = e.target.checked;
+            saveAudioPrefs();
+        });
+
+        document.getElementById('music-toggle').addEventListener('change', (e) => {
+            musicEnabled = e.target.checked;
+            saveAudioPrefs();
+            if (musicEnabled) {
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume().then(() => startBackgroundMusic());
                 } else {
-                    stopBackgroundMusic();
+                    startBackgroundMusic();
                 }
-            });
-            
-            document.getElementById('volume-slider').addEventListener('input', (e) => {
-                masterVolume = e.target.value / 100;
-                document.getElementById('volume-value').textContent = e.target.value + '%';
-                updateMusicVolume();
-            });
-            
-            // Hover sound tracking
-            let lastHoverTime = 0;
-            const hoverSoundThrottle = 150; // ms between hover sounds
-            
-            // ============================================
-            // NAVIGATION CONTROLS
-            // ============================================
-            
-            // Home button - reset camera
-            document.getElementById('home-button').addEventListener('click', () => {
-                cameraRotation = { x: defaultCameraRotation.x, y: defaultCameraRotation.y };
-                cameraDistance = defaultCameraDistance;
-                updateCameraPosition();
-                playClickSound('planet');
-            });
-            
-            // Auto-rotate toggle
-            document.getElementById('auto-rotate-button').addEventListener('click', (e) => {
-                autoRotateEnabled = !autoRotateEnabled;
-                e.target.classList.toggle('active');
-                playClickSound('moon');
-            });
-            
-            // Statistics panel toggle
-            document.getElementById('stats-button').addEventListener('click', () => {
-                const statsPanel = document.getElementById('stats-panel');
-                statsPanel.classList.toggle('visible');
-                playClickSound('moon');
-            });
-            
-            document.getElementById('close-stats').addEventListener('click', () => {
-                document.getElementById('stats-panel').classList.remove('visible');
-            });
-            
-            // Create planets (Mandalas) and moons (Suktas)
-            rigVedaData.forEach((mandalaData, index) => {
-                const orbitRadius = 40 + (index * 25);
-                const planetSize = 3 + (mandalaData.suktas / 30);
-                
-                // Create planet
-                const planetGeometry = new THREE.SphereGeometry(planetSize, 32, 32);
-                const planetMaterial = new THREE.MeshPhongMaterial({ 
-                    color: mandalaColors[index],
-                    emissive: mandalaColors[index],
-                    emissiveIntensity: 0.3,
-                    shininess: 30
-                });
-                const planet = new THREE.Mesh(planetGeometry, planetMaterial);
-                
-                // Position planet
-                const angle = (index / rigVedaData.length) * Math.PI * 2;
-                planet.position.x = Math.cos(angle) * orbitRadius;
-                planet.position.z = Math.sin(angle) * orbitRadius;
-                
-                // Store data
-                planet.userData = {
-                    type: 'planet',
-                    mandala: mandalaData.mandala,
-                    suktas: mandalaData.suktas,
-                    deity: mandalaData.deity,
-                    theme: mandalaData.theme,
-                    orbitRadius: orbitRadius,
-                    orbitSpeed: 0.0005 + (index * 0.0001),
-                    angle: angle
-                };
-                
-                scene.add(planet);
-                clickableObjects.push(planet);
-                planets.push(planet);
-                
-                // Create floating label for planet
-                const labelDiv = document.createElement('div');
-                labelDiv.className = 'planet-label';
-                labelDiv.textContent = `Mandala ${mandalaData.mandala}`;
-                labelDiv.style.position = 'absolute';
-                labelDiv.style.pointerEvents = 'none';
-                planetLabels.push({ planet: planet, label: labelDiv });
-                labelRenderer.appendChild(labelDiv);
-                
-                // Create orbit line
-                const orbitGeometry = new THREE.BufferGeometry();
-                const orbitPoints = [];
-                for (let i = 0; i <= 64; i++) {
-                    const ang = (i / 64) * Math.PI * 2;
-                    orbitPoints.push(
-                        Math.cos(ang) * orbitRadius,
-                        0,
-                        Math.sin(ang) * orbitRadius
-                    );
-                }
-                orbitGeometry.setAttribute('position', new THREE.Float32BufferAttribute(orbitPoints, 3));
-                const orbitMaterial = new THREE.LineBasicMaterial({ 
-                    color: mandalaColors[index], 
-                    transparent: true, 
-                    opacity: 0.2 
-                });
-                const orbitLine = new THREE.LineLoop(orbitGeometry, orbitMaterial);
-                scene.add(orbitLine);
-                
-                // Create moons (Suktas) - create a few representative moons
-                const moonCount = Math.min(8, Math.ceil(mandalaData.suktas / 25));
-                for (let m = 0; m < moonCount; m++) {
-                    const moonGeometry = new THREE.SphereGeometry(0.8, 16, 16);
-                    const moonMaterial = new THREE.MeshPhongMaterial({ 
-                        color: 0xcccccc,
-                        emissive: 0x444444,
-                        emissiveIntensity: 0.2,
-                        transparent: false,
-                        opacity: 1
-                    });
-                    const moon = new THREE.Mesh(moonGeometry, moonMaterial);
-                    
-                    const moonOrbitRadius = planetSize + 5 + (m * 2);
-                    const moonAngle = (m / moonCount) * Math.PI * 2;
-                    
-                    moon.userData = {
-                        type: 'moon',
-                        mandala: mandalaData.mandala,
-                        suktaGroup: m + 1,
-                        totalSuktas: mandalaData.suktas,
-                        parent: planet,
-                        orbitRadius: moonOrbitRadius,
-                        orbitSpeed: 0.002 + (m * 0.0003),
-                        angle: moonAngle
-                    };
-                    
-                    moon.position.x = planet.position.x + Math.cos(moonAngle) * moonOrbitRadius;
-                    moon.position.y = planet.position.y;
-                    moon.position.z = planet.position.z + Math.sin(moonAngle) * moonOrbitRadius;
-                    
-                    scene.add(moon);
-                    clickableObjects.push(moon);
-                }
-            });
-            
-            // Mouse and camera controls
-            const raycaster = new THREE.Raycaster();
-            const mouse = new THREE.Vector2();
-            
-            let isDragging = false;
-            let hasDragged = false;
-            let previousMousePosition = { x: 0, y: 0 };
-            let cameraRotation = { x: 0, y: 0 };
-            let cameraDistance = 300;
-            
-            function updateCameraPosition() {
-                const x = Math.cos(cameraRotation.y) * Math.cos(cameraRotation.x) * cameraDistance;
-                const y = Math.sin(cameraRotation.x) * cameraDistance;
-                const z = Math.sin(cameraRotation.y) * Math.cos(cameraRotation.x) * cameraDistance;
-                
-                camera.position.set(x, y, z);
-                camera.lookAt(0, 0, 0);
+            } else {
+                stopBackgroundMusic();
             }
-            
-            // Set initial camera position
+        });
+
+        document.getElementById('volume-slider').addEventListener('input', (e) => {
+            masterVolume = e.target.value / 100;
+            document.getElementById('volume-value').textContent = e.target.value + '%';
+            updateMusicVolume();
+            saveAudioPrefs();
+        });
+
+        // Navigation controls
+        let cameraRotation = { ...CONFIG.CAMERA.DEFAULT_ROTATION };
+        let cameraDistance = CONFIG.CAMERA.DEFAULT_DISTANCE;
+
+        document.getElementById('home-button').addEventListener('click', () => {
+            cameraRotation = { ...CONFIG.CAMERA.DEFAULT_ROTATION };
+            cameraDistance = CONFIG.CAMERA.DEFAULT_DISTANCE;
             updateCameraPosition();
-            
-            // Mouse down
-            renderer.domElement.addEventListener('mousedown', (e) => {
-                isDragging = true;
-                hasDragged = false;
+            playClickSound('planet');
+        });
+
+        document.getElementById('auto-rotate-button').addEventListener('click', (e) => {
+            autoRotateEnabled = !autoRotateEnabled;
+            e.target.classList.toggle('active');
+            playClickSound('moon');
+        });
+
+        document.getElementById('stats-button').addEventListener('click', () => {
+            const statsPanel = document.getElementById('stats-panel');
+            statsPanel.classList.toggle('visible');
+            playClickSound('moon');
+        });
+
+        document.getElementById('close-stats').addEventListener('click', () => {
+            document.getElementById('stats-panel').classList.remove('visible');
+        });
+
+        // ==============================================
+        // CREATE PLANETS AND MOONS
+        // ==============================================
+        rigVedaData.forEach((mandalaData, index) => {
+            const orbitRadius = CONFIG.PLANETS.BASE_ORBIT_RADIUS + (index * CONFIG.PLANETS.ORBIT_SPACING);
+            const planetSize = CONFIG.PLANETS.BASE_SIZE + (mandalaData.suktas / CONFIG.PLANETS.SIZE_MULTIPLIER);
+
+            const planetGeometry = new THREE.SphereGeometry(planetSize, 32, 32);
+            const planetMaterial = new THREE.MeshPhongMaterial({
+                color: mandalaColors[index],
+                emissive: mandalaColors[index],
+                emissiveIntensity: 0.3,
+                shininess: 30
+            });
+            const planet = new THREE.Mesh(planetGeometry, planetMaterial);
+
+            const angle = (index / rigVedaData.length) * Math.PI * 2;
+            planet.position.x = Math.cos(angle) * orbitRadius;
+            planet.position.z = Math.sin(angle) * orbitRadius;
+
+            planet.userData = {
+                type: 'planet',
+                mandala: mandalaData.mandala,
+                suktas: mandalaData.suktas,
+                deity: mandalaData.deity,
+                theme: mandalaData.theme,
+                orbitRadius: orbitRadius,
+                orbitSpeed: CONFIG.ANIMATION.BASE_ORBIT_SPEED + (index * CONFIG.ANIMATION.ORBIT_SPEED_INCREMENT),
+                angle: angle
+            };
+
+            scene.add(planet);
+            clickableObjects.push(planet);
+            planets.push(planet);
+
+            const labelDiv = document.createElement('div');
+            labelDiv.className = 'planet-label';
+            labelDiv.textContent = `Mandala ${mandalaData.mandala}`;
+            planetLabels.push({ planet: planet, label: labelDiv });
+            labelRenderer.appendChild(labelDiv);
+
+            const orbitGeometry = new THREE.BufferGeometry();
+            const orbitPoints = [];
+            for (let i = 0; i <= 64; i++) {
+                const ang = (i / 64) * Math.PI * 2;
+                orbitPoints.push(
+                    Math.cos(ang) * orbitRadius,
+                    0,
+                    Math.sin(ang) * orbitRadius
+                );
+            }
+            orbitGeometry.setAttribute('position', new THREE.Float32BufferAttribute(orbitPoints, 3));
+            const orbitMaterial = new THREE.LineBasicMaterial({
+                color: mandalaColors[index],
+                transparent: true,
+                opacity: 0.2
+            });
+            const orbitLine = new THREE.LineLoop(orbitGeometry, orbitMaterial);
+            scene.add(orbitLine);
+
+            const moonCount = Math.min(8, Math.ceil(mandalaData.suktas / 25));
+            for (let m = 0; m < moonCount; m++) {
+                const moonGeometry = new THREE.SphereGeometry(0.8, 16, 16);
+                const moonMaterial = new THREE.MeshPhongMaterial({
+                    color: 0xcccccc,
+                    emissive: 0x444444,
+                    emissiveIntensity: 0.2
+                });
+                const moon = new THREE.Mesh(moonGeometry, moonMaterial);
+
+                const moonOrbitRadius = planetSize + 5 + (m * 2);
+                const moonAngle = (m / moonCount) * Math.PI * 2;
+
+                moon.userData = {
+                    type: 'moon',
+                    mandala: mandalaData.mandala,
+                    suktaGroup: m + 1,
+                    totalSuktas: mandalaData.suktas,
+                    parent: planet,
+                    orbitRadius: moonOrbitRadius,
+                    orbitSpeed: 0.002 + (m * 0.0003),
+                    angle: moonAngle
+                };
+
+                moon.position.x = planet.position.x + Math.cos(moonAngle) * moonOrbitRadius;
+                moon.position.y = planet.position.y;
+                moon.position.z = planet.position.z + Math.sin(moonAngle) * moonOrbitRadius;
+
+                scene.add(moon);
+                clickableObjects.push(moon);
+            }
+        });
+
+        // ==============================================
+        // CAMERA AND INTERACTION
+        // ==============================================
+        function updateCameraPosition() {
+            const x = Math.cos(cameraRotation.y) * Math.cos(cameraRotation.x) * cameraDistance;
+            const y = Math.sin(cameraRotation.x) * cameraDistance;
+            const z = Math.sin(cameraRotation.y) * Math.cos(cameraRotation.x) * cameraDistance;
+
+            camera.position.set(x, y, z);
+            camera.lookAt(0, 0, 0);
+        }
+
+        updateCameraPosition();
+
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        let isDragging = false;
+        let hasDragged = false;
+        let previousMousePosition = { x: 0, y: 0 };
+
+        // Mouse controls
+        renderer.domElement.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            hasDragged = false;
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        });
+
+        renderer.domElement.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                hasDragged = true;
+                const deltaX = e.clientX - previousMousePosition.x;
+                const deltaY = e.clientY - previousMousePosition.y;
+
+                cameraRotation.y += deltaX * 0.005;
+                cameraRotation.x += deltaY * 0.005;
+
+                cameraRotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, cameraRotation.x));
+
                 previousMousePosition = { x: e.clientX, y: e.clientY };
-            });
-            
-            // Mouse move
-            renderer.domElement.addEventListener('mousemove', (e) => {
-                if (isDragging) {
-                    hasDragged = true;
-                    const deltaX = e.clientX - previousMousePosition.x;
-                    const deltaY = e.clientY - previousMousePosition.y;
-                    
-                    cameraRotation.y += deltaX * 0.005;
-                    cameraRotation.x += deltaY * 0.005;
-                    
-                    cameraRotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, cameraRotation.x));
-                    
-                    previousMousePosition = { x: e.clientX, y: e.clientY };
-                    
-                    updateCameraPosition();
-                }
-            });
-            
-            // Mouse up
-            renderer.domElement.addEventListener('mouseup', () => {
-                isDragging = false;
-                setTimeout(() => { hasDragged = false; }, 100);
-            });
-            
-            // Mouse leave
-            renderer.domElement.addEventListener('mouseleave', () => {
-                isDragging = false;
-                hasDragged = false;
-            });
-            
-            // Mouse wheel for zoom
-            renderer.domElement.addEventListener('wheel', (e) => {
-                e.preventDefault();
-                cameraDistance += e.deltaY * 0.5;
-                cameraDistance = Math.max(100, Math.min(800, cameraDistance));
                 updateCameraPosition();
-            }, { passive: false });
-            
-            // Click handler
-            function onMouseClick(event) {
-                if (hasDragged) return;
-                
-                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-                
-                raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObjects(clickableObjects);
-                
-                if (intersects.length > 0) {
-                    const obj = intersects[0].object;
-                    if (obj.userData && (obj.userData.type === 'planet' || obj.userData.type === 'moon')) {
-                        // Play appropriate sound
-                        playClickSound(obj.userData.type);
-                        displayInfo(obj.userData);
-                    }
-                } else {
-                    // Check if clicked on sun
-                    const sunIntersects = raycaster.intersectObjects([sun, sunGlow]);
-                    if (sunIntersects.length > 0) {
-                        playClickSound('sun');
-                        displaySunInfo();
-                    }
-                }
-            }
-            
-            function displaySunInfo() {
-                const panel = document.getElementById('info-panel');
-                panel.innerHTML = `
-                    <h1>☀️ The Sun of Knowledge</h1>
-                    <p class="mandala-name">Source of Vedic Wisdom</p>
-                    <p><strong>Represents:</strong> The eternal source of knowledge and enlightenment</p>
-                    <p><strong>Significance:</strong> Just as planets orbit the sun, all Vedic wisdom flows from the central truth</p>
-                    <p style="margin-top: 15px; font-size: 13px; font-style: italic; color: #ffcc00;">
-                        "From the unmanifest to the manifest, from darkness to light, from ignorance to knowledge"
-                    </p>
-                    <p class="sukta-info">The 10 Mandalas circle this eternal light, each contributing to the cosmic harmony.</p>
-                `;
-            }
-            
-            window.addEventListener('click', onMouseClick);
-            
-            // Mouse move for hover effects
-            renderer.domElement.addEventListener('mousemove', (event) => {
-                if (isDragging) return;
-                
-                // Throttle hover sound
+            } else {
                 const now = Date.now();
-                if (now - lastHoverTime < hoverSoundThrottle) return;
-                
-                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-                
+                if (now - lastHoverTime < CONFIG.AUDIO.HOVER_THROTTLE_MS) return;
+
+                // Get mouse position relative to canvas
+                const rect = renderer.domElement.getBoundingClientRect();
+                mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
                 raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObjects(clickableObjects);
-                
+                const visibleObjects = clickableObjects.filter(obj => {
+                    return camera.position.distanceTo(obj.position) < CONFIG.PERFORMANCE.RAYCAST_MAX_DISTANCE;
+                });
+                const intersects = raycaster.intersectObjects(visibleObjects);
+
                 if (intersects.length > 0) {
-                    document.body.style.cursor = 'pointer';
+                    renderer.domElement.style.cursor = 'pointer';
                     playHoverSound();
                     lastHoverTime = now;
                 } else {
-                    document.body.style.cursor = 'default';
+                    renderer.domElement.style.cursor = 'default';
                 }
+            }
+        });
+
+        renderer.domElement.addEventListener('mouseup', () => {
+            isDragging = false;
+            // Shorter timeout for better click responsiveness
+            setTimeout(() => { hasDragged = false; }, 50);
+        });
+
+        renderer.domElement.addEventListener('mouseleave', () => {
+            isDragging = false;
+            hasDragged = false;
+        });
+
+        renderer.domElement.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            cameraDistance += e.deltaY * 0.5;
+            cameraDistance = Math.max(CONFIG.CAMERA.MIN_DISTANCE, Math.min(CONFIG.CAMERA.MAX_DISTANCE, cameraDistance));
+            updateCameraPosition();
+        }, { passive: false });
+
+        // Touch controls for mobile
+        let touchStartDistance = 0;
+
+        renderer.domElement.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                const dx = e.touches[0].pageX - e.touches[1].pageX;
+                const dy = e.touches[0].pageY - e.touches[1].pageY;
+                touchStartDistance = Math.sqrt(dx * dx + dy * dy);
+            } else if (e.touches.length === 1) {
+                previousMousePosition = {
+                    x: e.touches[0].pageX,
+                    y: e.touches[0].pageY
+                };
+                isDragging = true;
+            }
+        });
+
+        renderer.domElement.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+
+            if (e.touches.length === 2) {
+                const dx = e.touches[0].pageX - e.touches[1].pageX;
+                const dy = e.touches[0].pageY - e.touches[1].pageY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const delta = touchStartDistance - distance;
+
+                cameraDistance += delta * 0.5;
+                cameraDistance = Math.max(CONFIG.CAMERA.MIN_DISTANCE, Math.min(CONFIG.CAMERA.MAX_DISTANCE, cameraDistance));
+                touchStartDistance = distance;
+                updateCameraPosition();
+            } else if (e.touches.length === 1 && isDragging) {
+                const deltaX = e.touches[0].pageX - previousMousePosition.x;
+                const deltaY = e.touches[0].pageY - previousMousePosition.y;
+
+                cameraRotation.y += deltaX * 0.005;
+                cameraRotation.x += deltaY * 0.005;
+                cameraRotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, cameraRotation.x));
+
+                previousMousePosition = {
+                    x: e.touches[0].pageX,
+                    y: e.touches[0].pageY
+                };
+                updateCameraPosition();
+            }
+        }, { passive: false });
+
+        renderer.domElement.addEventListener('touchend', () => {
+            isDragging = false;
+            touchStartDistance = 0;
+        });
+
+        // Click handler - attached to canvas only
+        renderer.domElement.addEventListener('click', (event) => {
+            if (hasDragged) return;
+
+            // Get mouse position relative to canvas
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            raycaster.far = CONFIG.PERFORMANCE.RAYCAST_MAX_DISTANCE;
+
+            const visibleObjects = clickableObjects.filter(obj => {
+                return camera.position.distanceTo(obj.position) < CONFIG.PERFORMANCE.RAYCAST_MAX_DISTANCE;
             });
-            
-            function displayInfo(data) {
-                const panel = document.getElementById('info-panel');
-                
-                if (data.type === 'planet') {
-                    const mandalaInfo = rigVedaData[data.mandala - 1];
-                    panel.innerHTML = `
-                        <h1>🪐 Mandala ${data.mandala}</h1>
-                        <p class="mandala-name">The ${getOrdinal(data.mandala)} Book</p>
-                        <p><strong>Total Suktas (Hymns):</strong> ${data.suktas}</p>
-                        <p><strong>Primary Deities:</strong> ${data.deity}</p>
-                        <p><strong>Theme:</strong> ${data.theme}</p>
-                        <p><strong>Composed by:</strong> ${mandalaInfo.rishi}</p>
-                        <p class="sukta-info">This Mandala contains ${data.suktas} sacred hymns composed by ancient Rishis.</p>
-                        <p style="margin-top: 10px; font-size: 12px; color: #aaa;"><em>Click on the moons to read sample verses</em></p>
+
+            const intersects = raycaster.intersectObjects(visibleObjects);
+
+            if (intersects.length > 0) {
+                const obj = intersects[0].object;
+                if (obj.userData && (obj.userData.type === 'planet' || obj.userData.type === 'moon')) {
+                    playClickSound(obj.userData.type);
+                    displayInfo(obj.userData);
+                }
+            } else {
+                const sunIntersects = raycaster.intersectObjects([sun, sunGlow]);
+                if (sunIntersects.length > 0) {
+                    playClickSound('sun');
+                    displaySunInfo();
+                }
+            }
+        });
+
+        // ==============================================
+        // DISPLAY INFO FUNCTIONS
+        // ==============================================
+        function displayInfo(data) {
+            const panel = document.getElementById('info-panel');
+
+            if (data.type === 'planet') {
+                const mandalaInfo = rigVedaData[data.mandala - 1];
+                panel.innerHTML = `
+                    <h1>Mandala ${data.mandala}</h1>
+                    <p class="mandala-name">The ${getOrdinal(data.mandala)} Book</p>
+                    <p><strong>Total Suktas (Hymns):</strong> ${data.suktas}</p>
+                    <p><strong>Primary Deities:</strong> ${data.deity}</p>
+                    <p><strong>Theme:</strong> ${data.theme}</p>
+                    <p><strong>Composed by:</strong> ${mandalaInfo.rishi}</p>
+                    <p class="sukta-info">This Mandala contains ${data.suktas} sacred hymns composed by ancient Rishis.</p>
+                    <p style="margin-top: 10px; font-size: 12px; color: #aaa;"><em>Click on the moons to read sample verses</em></p>
+                `;
+            } else if (data.type === 'moon') {
+                const sperMoon = Math.ceil(data.totalSuktas / 8);
+                const startSukta = (data.suktaGroup - 1) * sperMoon + 1;
+                const endSukta = Math.min(data.suktaGroup * sperMoon, data.totalSuktas);
+
+                const mantraKey = `${data.mandala}.${startSukta}.1`;
+                const mantra = sampleMantras[mantraKey];
+
+                let mantraHTML = '';
+                if (mantra) {
+                    mantraHTML = `
+                        <div style="margin-top: 15px; padding: 15px; background: rgba(255, 165, 0, 0.1); border-radius: 8px; border-left: 3px solid #ffa500;">
+                            <p style="font-size: 16px; color: #ffcc00; margin-bottom: 8px;"><strong>Sample Verse (${mantraKey})</strong></p>
+                            <p style="font-size: 14px; color: #fff; margin-bottom: 8px; font-family: 'Noto Sans Devanagari', serif;">${mantra.sanskrit}</p>
+                            <p style="font-size: 12px; color: #aaa; margin-bottom: 8px; font-style: italic;">${mantra.transliteration}</p>
+                            <p style="font-size: 13px; color: #ddd; margin-bottom: 8px;">"${mantra.translation}"</p>
+                            <p style="font-size: 11px; color: #999;">Rishi: ${mantra.rishi}</p>
+                            <p style="font-size: 11px; color: #999;">Deity: ${mantra.deity}</p>
+                        </div>
                     `;
-                } else if (data.type === 'moon') {
-                    const sperMoon = Math.ceil(data.totalSuktas / 8);
-                    const startSukta = (data.suktaGroup - 1) * sperMoon + 1;
-                    const endSukta = Math.min(data.suktaGroup * sperMoon, data.totalSuktas);
-                    
-                    // Try to find a sample mantra for this mandala
-                    const mantraKey = `${data.mandala}.${startSukta}.1`;
-                    const mantra = sampleMantras[mantraKey];
-                    
-                    let mantraHTML = '';
-                    if (mantra) {
-                        mantraHTML = `
-                            <div style="margin-top: 15px; padding: 15px; background: rgba(255, 165, 0, 0.1); border-radius: 8px; border-left: 3px solid #ffa500;">
-                                <p style="font-size: 16px; color: #ffcc00; margin-bottom: 8px;"><strong>Sample Verse (${mantraKey})</strong></p>
-                                <p style="font-size: 14px; color: #fff; margin-bottom: 8px; font-family: 'Noto Sans Devanagari', serif;">${mantra.sanskrit}</p>
-                                <p style="font-size: 12px; color: #aaa; margin-bottom: 8px; font-style: italic;">${mantra.transliteration}</p>
-                                <p style="font-size: 13px; color: #ddd; margin-bottom: 8px;">"${mantra.translation}"</p>
-                                <p style="font-size: 11px; color: #999;">— Rishi: ${mantra.rishi}</p>
-                                <p style="font-size: 11px; color: #999;">Deity: ${mantra.deity}</p>
-                            </div>
-                        `;
-                    } else {
-                        mantraHTML = `
-                            <div style="margin-top: 15px; padding: 15px; background: rgba(100, 100, 100, 0.2); border-radius: 8px;">
-                                <p style="font-size: 12px; color: #aaa;"><em>Sample mantras for Suktas ${startSukta}-${endSukta} can be loaded from the Rig Veda dataset.</em></p>
-                                <p style="font-size: 11px; color: #888; margin-top: 8px;">To add more verses, integrate data from sacred-texts.com or archive.org</p>
-                            </div>
-                        `;
-                    }
-                    
-                    panel.innerHTML = `
-                        <h1>🌙 Sukta Group ${data.suktaGroup}</h1>
-                        <p class="mandala-name">Mandala ${data.mandala}</p>
-                        <p><strong>Suktas:</strong> ${startSukta} - ${endSukta}</p>
-                        <p><strong>Total in Mandala:</strong> ${data.totalSuktas} hymns</p>
-                        <p class="sukta-info">These hymns represent a portion of the sacred verses from Mandala ${data.mandala}.</p>
-                        ${mantraHTML}
+                } else {
+                    mantraHTML = `
+                        <div style="margin-top: 15px; padding: 15px; background: rgba(100, 100, 100, 0.2); border-radius: 8px;">
+                            <p style="font-size: 12px; color: #aaa;"><em>Sample mantras for Suktas ${startSukta}-${endSukta} can be loaded from the Rig Veda dataset.</em></p>
+                        </div>
                     `;
                 }
-            }
-            
-            function getOrdinal(n) {
-                const s = ["th", "st", "nd", "rd"];
-                const v = n % 100;
-                return n + (s[(v - 20) % 10] || s[v] || s[0]);
-            }
-            
-            // Animation loop
-            let animationTime = 0;
-            function animate() {
-                requestAnimationFrame(animate);
-                animationTime += 0.02;
-                
-                // Auto-rotate camera
-                if (autoRotateEnabled && !isDragging) {
-                    cameraRotation.y += autoRotateSpeed;
-                    updateCameraPosition();
-                }
-                
-                // Rotate sun
-                sun.rotation.y += 0.001;
-                sunGlow.rotation.y -= 0.001;
-                
-                // Orbit planets
-                planets.forEach((planet) => {
-                    planet.userData.angle += planet.userData.orbitSpeed;
-                    planet.position.x = Math.cos(planet.userData.angle) * planet.userData.orbitRadius;
-                    planet.position.z = Math.sin(planet.userData.angle) * planet.userData.orbitRadius;
-                    planet.rotation.y += 0.005;
-                });
-                
-                // Orbit moons around their planets
-                clickableObjects.forEach((obj) => {
-                    if (obj.userData.type === 'moon') {
-                        const parent = obj.userData.parent;
-                        obj.userData.angle += obj.userData.orbitSpeed;
-                        
-                        obj.position.x = parent.position.x + Math.cos(obj.userData.angle) * obj.userData.orbitRadius;
-                        obj.position.z = parent.position.z + Math.sin(obj.userData.angle) * obj.userData.orbitRadius;
-                    }
-                    
-                    // Pulsing effect for matched objects during search
-                    if (searchActive && matchingObjects.has(obj)) {
-                        const pulseIntensity = 0.5 + Math.sin(animationTime * 2) * 0.3;
-                        obj.material.emissiveIntensity = pulseIntensity;
-                    }
-                });
-                
-                // Update planet labels positions
-                planetLabels.forEach(({ planet, label }) => {
-                    const vector = new THREE.Vector3();
-                    vector.setFromMatrixPosition(planet.matrixWorld);
-                    vector.y += 10; // Offset above planet
-                    vector.project(camera);
-                    
-                    const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
-                    const y = (vector.y * -0.5 + 0.5) * window.innerHeight;
-                    
-                    label.style.left = x + 'px';
-                    label.style.top = y + 'px';
-                    
-                    // Hide label if behind camera
-                    label.style.display = vector.z < 1 ? 'block' : 'none';
-                });
-                
-                renderer.render(scene, camera);
-            }
-            
-            // Handle window resize
-            window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            });
-            
-            // Hide loading message
-            setTimeout(() => {
-                const loadingEl = document.getElementById('loading');
-                if (loadingEl) {
-                    loadingEl.style.display = 'none';
-                }
-            }, 1000);
-            
-            // Start animation
-            animate();
-            
-        } catch (error) {
-            console.error('Error initializing Cosmic Rig Veda:', error);
-            const loadingEl = document.getElementById('loading');
-            if (loadingEl) {
-                loadingEl.innerHTML = 'Error loading visualization. Please refresh the page.';
-                loadingEl.style.color = '#ff6b6b';
+
+                panel.innerHTML = `
+                    <h1>Sukta Group ${data.suktaGroup}</h1>
+                    <p class="mandala-name">Mandala ${data.mandala}</p>
+                    <p><strong>Suktas:</strong> ${startSukta} - ${endSukta}</p>
+                    <p><strong>Total in Mandala:</strong> ${data.totalSuktas} hymns</p>
+                    <p class="sukta-info">These hymns represent a portion of the sacred verses from Mandala ${data.mandala}.</p>
+                    ${mantraHTML}
+                `;
             }
         }
+
+        function displaySunInfo() {
+            const panel = document.getElementById('info-panel');
+            panel.innerHTML = `
+                <h1>The Sun of Knowledge</h1>
+                <p class="mandala-name">Source of Vedic Wisdom</p>
+                <p><strong>Represents:</strong> The eternal source of knowledge and enlightenment</p>
+                <p><strong>Significance:</strong> Just as planets orbit the sun, all Vedic wisdom flows from the central truth</p>
+                <p style="margin-top: 15px; font-size: 13px; font-style: italic; color: #ffcc00;">
+                    "From the unmanifest to the manifest, from darkness to light, from ignorance to knowledge"
+                </p>
+                <p class="sukta-info">The 10 Mandalas circle this eternal light, each contributing to the cosmic harmony.</p>
+            `;
+        }
+
+        function getOrdinal(n) {
+            const s = ["th", "st", "nd", "rd"];
+            const v = n % 100;
+            return n + (s[(v - 20) % 10] || s[v] || s[0]);
+        }
+
+        // ==============================================
+        // LABEL UPDATE FUNCTION
+        // ==============================================
+        function updatePlanetLabels() {
+            planetLabels.forEach(({ planet, label }) => {
+                const vector = new THREE.Vector3();
+                vector.setFromMatrixPosition(planet.matrixWorld);
+                vector.y += 10;
+                vector.project(camera);
+
+                const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+                const y = (vector.y * -0.5 + 0.5) * window.innerHeight;
+
+                label.style.transform = `translate(${x}px, ${y}px)`;
+                label.style.display = vector.z < 1 ? 'block' : 'none';
+            });
+        }
+
+        // ==============================================
+        // ANIMATION LOOP
+        // ==============================================
+        let animationTime = 0;
+        let frameCount = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            animationTime += 0.02;
+            frameCount++;
+
+            if (autoRotateEnabled && !isDragging) {
+                cameraRotation.y += CONFIG.ANIMATION.AUTO_ROTATE_SPEED;
+                updateCameraPosition();
+            }
+
+            sun.rotation.y += CONFIG.ANIMATION.SUN_ROTATION_SPEED;
+            sunGlow.rotation.y -= CONFIG.ANIMATION.SUN_ROTATION_SPEED;
+
+            planets.forEach((planet) => {
+                planet.userData.angle += planet.userData.orbitSpeed;
+                planet.position.x = Math.cos(planet.userData.angle) * planet.userData.orbitRadius;
+                planet.position.z = Math.sin(planet.userData.angle) * planet.userData.orbitRadius;
+                planet.rotation.y += CONFIG.ANIMATION.PLANET_ROTATION_SPEED;
+            });
+
+            clickableObjects.forEach((obj) => {
+                if (obj.userData.type === 'moon') {
+                    const parent = obj.userData.parent;
+                    obj.userData.angle += obj.userData.orbitSpeed;
+
+                    obj.position.x = parent.position.x + Math.cos(obj.userData.angle) * obj.userData.orbitRadius;
+                    obj.position.z = parent.position.z + Math.sin(obj.userData.angle) * obj.userData.orbitRadius;
+                }
+
+                if (searchActive && matchingObjects.has(obj)) {
+                    const pulseIntensity = 0.5 + Math.sin(animationTime * CONFIG.SEARCH.PULSE_SPEED) * 0.3;
+                    obj.material.emissiveIntensity = pulseIntensity;
+                }
+            });
+
+            if (frameCount % CONFIG.PERFORMANCE.LABEL_UPDATE_INTERVAL === 0) {
+                updatePlanetLabels();
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // ==============================================
+        // WINDOW RESIZE
+        // ==============================================
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // ==============================================
+        // INITIALIZATION
+        // ==============================================
+        setTimeout(() => {
+            const loadingEl = document.getElementById('loading');
+            if (loadingEl) {
+                loadingEl.style.display = 'none';
+            }
+        }, 1000);
+
+        animate();
     </script>
 </body>
 </html>
